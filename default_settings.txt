@@ -1,0 +1,64 @@
+
+
+-- radius in which the Dial Home Device checks for portal when it is put down
+portal_mgc.dhd_check_radius = 10
+
+
+-- material of which the portal ring needs to be made
+portal_mgc.ring_material = "technic:carbon_steel_block"
+
+
+-- HV power requirement per second
+-- note: deliberately high
+portal_mgc.hv_power_demand = 500000
+
+
+
+-- 
+-- RING / PORTAL BLUEPRINTS
+--
+-- NOTE: all coordinates are translated from the keystone, the bottom middle of the portal
+-- the position is omitted since it is checked for the right node block in the first place
+
+
+-- the inside of the ring which is checked for air
+-- big inside for 7x7 portal
+portal_mgc.inside = { 	{x=0,y=1,z=0}, {x=0,y=2,z=0}, {x=0,y=3,z=0}, {x=0,y=4,z=0}, {x=0,y=5,z=0},
+				{x=1,y=1,z=0}, {x=1,y=2,z=0}, {x=1,y=3,z=0}, {x=1,y=4,z=0}, {x=1,y=5,z=0},
+				{x=2,y=2,z=0}, {x=2,y=3,z=0}, {x=2,y=4,z=0}, 
+				{x=-1,y=1,z=0}, {x=-1,y=2,z=0}, {x=-1,y=3,z=0}, {x=-1,y=4,z=0}, {x=-1,y=5,z=0},
+				{x=-2,y=2,z=0}, {x=-2,y=3,z=0}, {x=-2,y=4,z=0}
+			}
+		
+-- the actual ring (keystone excluded (0,0,0)) which is checked for ring_material
+-- big ring 7x7
+portal_mgc.ring = {	{x=-1,y=0,z=0},
+					{x=-2,y=0,z=0}, {x=-2,y=1,z=0},
+					{x=-3,y=1,z=0}, {x=-3,y=2,z=0},
+					{x=-3,y=3,z=0}, {x=-3,y=4,z=0}, {x=-3,y=5,z=0}, 
+					{x=-2,y=5,z=0}, {x=-2,y=6,z=0},
+					{x=-1,y=6,z=0}, {x=0,y=6,z=0},
+					-- second half
+					{x=1,y=6,z=0}, {x=2,y=6,z=0}, 
+					{x=2,y=5,z=0}, {x=3,y=5,z=0},
+					{x=3,y=4,z=0}, {x=3,y=3,z=0},
+					{x=3,y=2,z=0}, {x=3,y=1,z=0},
+					{x=2,y=1,z=0}, {x=2,y=0,z=0},
+					{x=1,y=0,z=0} 
+				}	
+	
+
+-- TESTING example rename big ring to something else and remove small_ from 2 vars below
+-- small inside 5x5 portal for testing
+portal_mgc.small_inside = { {x=0,y=1,z=0}, {x=-1,y=2,z=0}, {x=0,y=2,z=0}, {x=1,y=2,z=0}, {x=0,y=3,z=0} }
+
+-- small ring 5x5 (easier testing)
+portal_mgc.small_ring = { 	{x=-1,y=0,z=0}, {x=-1,y=1,z=0},
+				{x=-2,y=1,z=0}, {x=-2,y=2,z=0},
+				{x=-2,y=3,z=0}, {x=-1,y=3,z=0},
+				{x=-1,y=4,z=0}, {x=0,y=4,z=0},
+				-- second half
+				{x=1,y=4,z=0}, {x=1,y=3,z=0},
+				{x=2,y=3,z=0}, {x=2,y=2,z=0},
+				{x=2,y=1,z=0}, {x=1,y=1,z=0},
+				{x=1,y=0,z=0} }
