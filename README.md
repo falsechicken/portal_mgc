@@ -14,7 +14,7 @@ Same goes for DHD textures: 'borrowed' from [DS-minetest] (https://forum.minetes
 
 The portal itself is a structure you have to build yourself (atm anyway), it should look like this and be made from carbon steel blocks
 
-#TODO add picture
+![alt screenie] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshot.png)
 
 
 Then put down a DialHomeDevice (DHD) near a portal to have it connect to that portal. Right clicking the DHD will open the menu. Note that the DHD needs technic HV power for the portal to function. The DHD and the portal work wireless (let's go with that ;) )
