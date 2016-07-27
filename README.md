@@ -1,18 +1,20 @@
-(WIP) Minetest Portals (a la Stargate)
+#(WIP) Minetest Portals (a la Stargate)
+
 
 
 By: Harrierjack based on [technic/stargate] (https://github.com/minetest-technic/stargate)
 (I admit the formspec is just a near straight copy but in my defense it looked way better then anything I could come up with :P)
 
+
 Same goes for DHD textures: 'borrowed' from [DS-minetest] (https://forum.minetest.net/viewtopic.php?f=9&t=9632)
 
 
-Stargate like portals for Minetest.
+##Stargate-like portals for Minetest.
 
 
 The portal itself is a structure you have to build yourself (atm anyway), it should look like this and be made from carbon steel blocks
 
-TODO picture
+#TODO add picture
 
 
 Then put down a DialHomeDevice (DHD) near a portal to have it connect to that portal. Right clicking the DHD will open the menu. Note that the DHD needs technic HV power for the portal to function. The DHD and the portal work wireless (let's go with that ;) )
