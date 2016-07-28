@@ -75,8 +75,10 @@ minetest.register_on_joinplayer(function(player)
 end)
 
 --portal_mgc.registerGate = function(player_name,pos,dir)
-portal_mgc.register_portal = function(player_name,pos, dir)
+portal_mgc.register_portal = function(player_name, pos, dir)
 	--local player_name = player:get_player_name()
+	
+	print("register portal ".. tostring(dir))
 	
 	if portal_network[player_name]==nil then
 		portal_network[player_name]={}
@@ -152,7 +154,7 @@ end
 portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, active)
 	-- set meta for all but keystone ring blocks
 	for __,v in pairs(portal_mgc.ring) do
-		if orientation == "east" then v = portal_mgc.swap_coordinates(v) end
+		if orientation == 1 or 3 then v = portal_mgc.swap_coordinates(v) end
 		local vpos = vector.add(pos, v)
 		
 		local meta = minetest.get_meta(vpos)
