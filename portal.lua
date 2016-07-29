@@ -109,9 +109,6 @@ end
 
 
 
-
-
-
 -- check for a gate at pos with radius 
 local function find_gate_pos(pos, radius, player)	
 	local minp = vector.subtract(pos, radius)
@@ -124,8 +121,6 @@ local function find_gate_pos(pos, radius, player)
 	
 	local player_name = player:get_player_name()
 	
-	--minetest.chat_send_all("test: " .. minp.x .." pos.x=".. pos.x)
-
 	local poslist = minetest.find_nodes_in_area(minp, maxp, portal_mgc.ring_material)
 	
 	-- for each pos in poslist check if keystone
@@ -143,13 +138,7 @@ local function find_gate_pos(pos, radius, player)
 			meta:set_string("portal_keystone", minetest.serialize(v))		
 			--meta:set_string("portal_dir", "north")
 			meta:set_int("portal_dir", facedir)
-						
-			--minetest.chat_send_all("test: north")
-			
-			
-			--get_dir_from_diff(pos, v)
-			
-			
+							
 			return true
 		elseif check_for_portal_east(v, data, area) then
 			local meta = minetest.get_meta(pos)
@@ -161,11 +150,7 @@ local function find_gate_pos(pos, radius, player)
 			meta:set_string("portal_keystone", minetest.serialize(v))		
 			--meta:set_string("portal_dir", "east")
 			meta:set_int("portal_dir", facedir)
-			
-			--minetest.chat_send_all("test: east")
-			
-			--get_dir_from_diff(pos, v)
-			
+				
 			return true
 		end
 	end
@@ -177,27 +162,14 @@ end
 
 -- activate portal by swapping the air nodes with diamond
 function activate_portal(pos, orientation)
-	--local minp = vector.subtract(pos, 5)		-- TODO remove static number 5, though it's big enough for very large portal
-	--local maxp = vector.add(pos, 5)				-- TODO remove static number 5, though it's big enough for very large portal
-
-	--local vm = minetest.get_voxel_manip()
-	--local e1, e2 = vm:read_from_map(minp, maxp)
-	--local area = VoxelArea:new({MinEdge=e1, MaxEdge=e2})
-	--local data = vm:get_data()
-	
-	--local c_portal_on = minetest.get_content_id("default:diamondblock")
-	
-	minetest.chat_send_all("orientation " .. tostring(orientation))
-	
 	-- swap air with custom inside block
 	for __,v in pairs(portal_mgc.inside) do
 		-- swap coords according direction
-		if tonumber(orientation) == 1 or tonumber(orientation) == 3 then v = portal_mgc.swap_coordinates(v) minetest.chat_send_all("swapped coords") end
+		if tonumber(orientation) == 1 or tonumber(orientation) == 3 then 
+			v = portal_mgc.swap_coordinates(v) minetest.chat_send_all("swapped coords") 
+		end
 		
 		local vpos = vector.add(pos, v )
-		-- local node = data[area:index(vpos.x, vpos.y, vpos.z)] 
-		
-		--data[vpos] = c_portal_on
 		minetest.set_node(vpos, {name=portal_mgc.modname .. ":portal_block_inside"})
 		
 		-- set all inside blocks portal coords (tmp fix?)
@@ -206,42 +178,17 @@ function activate_portal(pos, orientation)
 		
 	end
 	
-	-- set metadata and info text on ring?
-	--for __,v in pairs(portal_mgc.ring) do
-		--local vpos = vector.add(pos, v)
-		--local node = data[area:index(vpos.x, vpos.y, vpos.z)]
-		
-		-- if node is carbon(atm)
-		-- if node ~= c_portal_material then return false end
-	--end
 	
 	minetest.sound_play("gateOpen", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
 	minetest.chat_send_all("activated")
 	
-	
-	-- write changes to map	
-	--vm:set_data(data)
-	--vm:calc_lighting()
-	--vm:update_liquids()
-	--vm:write_to_map()
-		
-		
-		
+			
 end
 
 
 -- TODO redo activate/deactivate for efficiency with voxelmanip? (but for now make working concept)
 -- deactivate portal by swapping the air nodes with diamond
 function deactivate_portal(pos, orientation)
-	--local minp = vector.subtract(pos, 5)		-- TODO remove static number 5, though it's big enough for very large portal
-	--local maxp = vector.add(pos, 5)				-- TODO remove static number 5, though it's big enough for very large portal
-
-	--local vm = minetest.get_voxel_manip()
-	--local e1, e2 = vm:read_from_map(minp, maxp)
-	--local area = VoxelArea:new({MinEdge=e1, MaxEdge=e2})
-	--local data = vm:get_data()
-	
-	--local c_portal_off = minetest.get_content_id("air")
 	
 	-- swap air with diamond	
 	for __,v in pairs(portal_mgc.inside) do
@@ -249,39 +196,13 @@ function deactivate_portal(pos, orientation)
 		if tonumber(orientation) == 1 or tonumber(orientation) == 3 then v = portal_mgc.swap_coordinates(v) end
 		
 		local vpos = vector.add(pos, v )
-		-- local node = data[area:index(vpos.x, vpos.y, vpos.z)] 
-		
-		--data[vpos] = c_portal_off
-		--minetest.set_node(vpos, {name="default:dirt"})
 		minetest.remove_node(vpos)
 	end
 	
 	minetest.sound_play("gateClose", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
 	minetest.chat_send_all("deactivated")
-	
-	-- set metadata and info text on ring?
-	--for __,v in pairs(portal_mgc.ring) do
-		--local vpos = vector.add(pos, v)
-		--local node = data[area:index(vpos.x, vpos.y, vpos.z)]
-		
-		-- if node is carbon(atm)
-		-- if node ~= c_portal_material then return false end
-	--end
-	
-	
-	-- write changes to map	
-	--vm:set_data(data)
-	--vm:calc_lighting()
-	--vm:update_liquids()
-	--vm:write_to_map()
-		
-		
-		
+			
 end
-
-
--- function swap_portal_center(pos, 
-
 
 
 
@@ -317,30 +238,6 @@ minetest.register_node(portal_mgc.modname .. ":portal_block_inside", {
 	diggable = false,
 		
 	groups = { not_in_creative_inventory, cracky=5 },
-		
-})
-
-
-minetest.register_node(portal_mgc.modname .. ":portal_test3", {
-	description = "Cobweb",
-       drawtype = "glasslike_framed",
-       --visual_scale = 1.1,
-       tiles = {"default_water.png"},
-       --inventory_image = "cobweb.png",
-       paramtype = "light",
-       sunlight_propagates = true,
-		alpha = 250,
-       liquid_viscosity = 14,
-       liquidtype = "source",
-       liquid_alternative_flowing = portal_mgc.modname .. ":portal_test3",
-       liquid_alternative_source = portal_mgc.modname .. ":portal_test3",
-       liquid_renewable = false,
-       liquid_range = 0,
-       collisionbox = {-0.5,-0.5,-0.5, 0.5,0.5,0.5},
-       walkable = false,
-       groups = {snappy=1},
-       --drop = "farming:string",
-		
 		
 })
 
@@ -404,16 +301,20 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 					
 	end,
 
-		
-	-- after_dig_node = pipeworks.scan_for_tube_objects,
-	-- on_receive_fields = harvester_receive_fields,
+	-- TODO enable technic hv 
 	-- technic_run = harvester_run,
 	
 		
+	-- TODO? enable/disble portal by punching?
 	-- old test function
 	on_punch = function(pos) 
-		minetest.chat_send_all("ouch")			
+		local meta = minetest.get_meta(pos)
+		minetest.get_node_timer(pos):start(2)
 			
+		end,
+		
+	on_timer = function(pos, elapsed)
+			minetest.chat_send_all("timer tick")
 			
 		end,
 		
@@ -445,14 +346,11 @@ minetest.register_abm({
 				local dest_gate=portal_mgc.findGate (pos1)
 				if dest_gate==nil then 
 					gate["destination"]=nil
-					--deactivateGate(pos)
 					deactivate_portal(ppos, gate["dir"])
 					portal_mgc.save_data(owner)
 					return
 				end
 				if player_name~=owner and gate["type"]=="private" then return end
-					
-					-- TODO fix direction and position?
 					
 				local dir1=gate["destination_dir"]
 				local dest_angle
@@ -472,10 +370,7 @@ minetest.register_abm({
 					
 				-- raise height?
 				pos1 = vector.add(pos1, {x=0,y=1,z=0})
-					
-				minetest.chat_send_all("trying to teleport..")	
-					
-					
+								
 				object:moveto(pos1,false)
 				object:set_look_yaw(math.rad(dest_angle))
 				core.sound_play("enterEventHorizon", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
