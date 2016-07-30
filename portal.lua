@@ -38,12 +38,12 @@ local function check_for_portal_north(pos, data, area)
 	local c_air = minetest.get_content_id("air")
 	local c_portal_material = minetest.get_content_id(portal_mgc.ring_material)
 	
-	-- TODO check if already registered as keystone so no other calc is needed
+	-- check if already registered as keystone so no other calc is needed
 	local meta = minetest.get_meta(pos)
-	local is_gate = meta:get_int("portal_active")
-	if is_gate ~= nil then print(is_gate) return false end
-	
-	
+	local is_gate = meta:get_string("infotext")
+	--not sure if it's a great way for checking but it works atm
+	if is_gate ~= "" then print(is_gate) return false end	
+		
 	-- check for air if not correct no keystone anyway		
 	for __,v in pairs(portal_mgc.inside) do
 		local vpos = vector.add(pos, v )

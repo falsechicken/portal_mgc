@@ -136,7 +136,7 @@ end
 
 
 
--- create set portal infotext 
+-- create portal infotext 
 portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, active)
 	-- set meta for all but keystone ring blocks
 	for __,v in pairs(portal_mgc.ring) do
