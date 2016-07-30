@@ -27,7 +27,6 @@ local function get_dir_from_diff(dhd_pos, portal_pos)
 	local diff = vector.subtract(dhd_pos, portal_pos)
 	local facedir = minetest.dir_to_facedir(diff)
 	
-	minetest.chat_send_all("facedir " .. facedir)
 	return facedir
 end
 
@@ -41,8 +40,9 @@ local function check_for_portal_north(pos, data, area)
 	
 	-- TODO check if already registered as keystone so no other calc is needed
 	local meta = minetest.get_meta(pos)
-	local keystone = meta:get_string("portal_keystone")
-	if type(keystone) == "table" then return false end
+	local is_gate = meta:get_int("portal_active")
+	if is_gate ~= nil then print(is_gate) return false end
+	
 	
 	-- check for air if not correct no keystone anyway		
 	for __,v in pairs(portal_mgc.inside) do
@@ -80,7 +80,7 @@ local function check_for_portal_east(pos, data, area)
 	-- TODO check if already registered as keystone so no other calc is needed
 	local meta = minetest.get_meta(pos)
 	local keystone = meta:get_string("portal_keystone")
-	if type(keystone) == "table" then return false end
+	if type(keystone) == "table" then print("already a registered gate") return false end
 	
 	--minetest.chat_send_all("check north?")
 	
@@ -109,7 +109,7 @@ end
 
 
 
--- check for a gate at pos with radius 
+-- check for a gate at position of dhd with radius 
 local function find_gate_pos(pos, radius, player)	
 	local minp = vector.subtract(pos, radius)
 	local maxp = vector.add(pos, radius)
@@ -131,9 +131,7 @@ local function find_gate_pos(pos, radius, player)
 			
 			-- register portal keystone
 			portal_mgc.register_portal(player_name, v, facedir)
-			
-			print("check_for_portal_north ".. tostring(facedir))
-			
+		
 			-- register portal with DHD
 			meta:set_string("portal_keystone", minetest.serialize(v))		
 			--meta:set_string("portal_dir", "north")
@@ -166,7 +164,7 @@ function activate_portal(pos, orientation)
 	for __,v in pairs(portal_mgc.inside) do
 		-- swap coords according direction
 		if tonumber(orientation) == 1 or tonumber(orientation) == 3 then 
-			v = portal_mgc.swap_coordinates(v) minetest.chat_send_all("swapped coords") 
+			v = portal_mgc.swap_coordinates(v)  
 		end
 		
 		local vpos = vector.add(pos, v )
@@ -250,7 +248,7 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 	paramtype2 = "facedir",
 	sunlight_propagates = true,
 
-	groups = {cracky=2, tubedevice=0, technic_machine=1, technic_hv=1},
+	groups = {cracky=3, tubedevice=0, technic_machine=1, technic_hv=1},
 	connect_sides = {"bottom", "front", "back", "left", "right"},		-- connections for technic power
 
 	sounds = default_stone_sounds, 
@@ -334,9 +332,7 @@ minetest.register_abm({
 					
 				local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
 				local owner = minetest.get_meta(ppos):get_string("owner")	
-					
-					minetest.chat_send_all("trying to prep teleport.." .. owner)	
-					
+									
 				local gate=portal_mgc.findGate (ppos)
 				if gate==nil then print("Gate is not registered!") return end
 				local pos1={}

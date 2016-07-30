@@ -76,10 +76,7 @@ end)
 
 --portal_mgc.registerGate = function(player_name,pos,dir)
 portal_mgc.register_portal = function(player_name, pos, dir)
-	--local player_name = player:get_player_name()
-	
-	print("register portal ".. tostring(dir))
-	
+
 	if portal_network[player_name]==nil then
 		portal_network[player_name]={}
 	end
@@ -102,8 +99,10 @@ end
 
 
 portal_mgc.unregister_portal = function(player_name,gate_pos)	
+	local dir
 	for __,gate in ipairs(portal_network[player_name]) do
 		if gate["pos"].x==gate_pos.x and gate["pos"].y==gate_pos.y and gate["pos"].z==gate_pos.z then
+			dir = gate["dir"]
 			table.remove(portal_network[player_name], __)
 			break
 		end
@@ -117,21 +116,8 @@ portal_mgc.unregister_portal = function(player_name,gate_pos)
 	
 end
 
--- TODO DELETE, changed to unregister_portal
-portal_mgc.unregisterGate = function(player_name,pos)
-	for __,gates in ipairs(portal_network[player_name]) do
-		if gates["pos"].x==pos.x and gates["pos"].y==pos.y and gates["pos"].z==pos.z then
-			table.remove(portal_network[player_name], __)
-			break
-		end
-	end
-	if portal_mgc.save_data(player_name)==nil then
-		minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
-	end
-end
 
-
--- TODO DELETE? no, used in gate_defs/portal.lua for teleport
+-- used in gate_defs/portal.lua for teleport
 portal_mgc.findGate = function(pos)
 	for __,tab in ipairs(portal_network["registered_players"]) do
 		local player_name=tab["player_name"]
@@ -154,7 +140,7 @@ end
 portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, active)
 	-- set meta for all but keystone ring blocks
 	for __,v in pairs(portal_mgc.ring) do
-		if orientation == 1 or 3 then v = portal_mgc.swap_coordinates(v) end
+		if tonumber(orientation) == 1 or tonumber(orientation) == 3 then v = portal_mgc.swap_coordinates(v) end
 		local vpos = vector.add(pos, v)
 		
 		local meta = minetest.get_meta(vpos)
@@ -167,7 +153,6 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, active
 	meta:set_string("infotext", infotext)
 	meta:set_string("owner", owner)
 	meta:set_int("portal_active", active)
-
 
 
 end
@@ -211,7 +196,7 @@ portal_mgc.gateFormspecHandler = function(pos, node, clicker, itemstack)
 			end
 		end
 
-	print(dump(portal_network["players"][player_name]["public_gates"]))
+	--print(dump(portal_network["players"][player_name]["public_gates"]))
 	if current_gate==nil then 
 		minetest.chat_send_player(player_name, "Gate not registered in network! Please remove it and place once again.")
 		return nil
@@ -281,9 +266,7 @@ portal_mgc.get_formspec = function(player_name,page)
 	local pagemax
 	if portal_network["players"][player_name]["dest_type"] == "own" then 
 		pagemax = math.floor((portal_network["players"][player_name]["own_gates_count"] / 24) + 1)
-		
-		--TODO DELETE minetest.chat_send_player(player_name, "owngates " .. portal_network["players"][player_name]["own_gates_count"])
-		
+			
 		local x,y
 		for y=0,7,1 do
 		for x=0,2,1 do
@@ -425,12 +408,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			current_gate["destination"]=nil
 		end
 		if current_gate["destination"] then 
-			-- TODO FIX activation
-			--activateGate (current_gate["pos"])
+			-- TODO delay activation?
 			activate_portal(current_gate["pos"], current_gate["dir"])
 		else
-				-- TODO FIX deactivation
-			--deactivateGate (current_gate["pos"])
 			deactivate_portal(current_gate["pos"], current_gate["dir"])
 		end
 		if current_gate["type"]=="private" then infotext="Private"	else infotext="Public" end
@@ -441,7 +421,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			infotext=infotext..current_gate["destination_description"]
 		end
 		portal_mgc.set_portal_meta(current_gate["pos"], current_gate["dir"], infotext, player_name, 0)
-		-- meta:set_string("infotext",infotext)
 		if portal_mgc.save_data(player_name)==nil then
 			minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
 		end
