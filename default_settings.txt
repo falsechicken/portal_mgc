@@ -2,9 +2,10 @@
 
 -- radius in which the Dial Home Device checks for portal when it is put down
 portal_mgc.dhd_check_radius = 10
+portal_mgc.portal_time_open = 8		-- amount of time (s) the portal stays open if nobody goes through
+portal_mgc.portal_time_extra = 2	-- amount of time (s) the portal stays open longer when someone goes through (stacks)
 
-
--- material of which the portal ring needs to be made
+-- material which the portal ring needs to be made of
 portal_mgc.ring_material = "technic:carbon_steel_block"
 
 
@@ -19,7 +20,8 @@ portal_mgc.hv_power_demand = 500000
 --
 -- NOTE: all coordinates are translated from the keystone, the bottom middle of the portal
 -- the position is omitted since it is checked for the right node block in the first place
-
+-- considered from the normal x z perspective (north is +z, east is +x)
+-- if you edit this keep the same directions, otherwise face directions might not work properly
 
 -- the inside of the ring which is checked for air
 -- big inside for 7x7 portal
@@ -48,7 +50,7 @@ portal_mgc.ring = {	{x=-1,y=0,z=0},
 				}	
 	
 
--- TESTING example rename big ring to something else and remove small_ from 2 vars below
+-- TESTING example rename big ring to something else and remove small_ from 2 names below
 -- small inside 5x5 portal for testing
 portal_mgc.small_inside = { {x=0,y=1,z=0}, {x=-1,y=2,z=0}, {x=0,y=2,z=0}, {x=1,y=2,z=0}, {x=0,y=3,z=0} }
 

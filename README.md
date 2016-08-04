@@ -24,6 +24,10 @@ Portals can be public or private to grant or deny access and after registering w
 
 All public portals are connected (no discovery necessary)
 
+Requires:  
+[Technic](https://github.com/minetest-technic/technic)
+
+
 ####TODO:
 	- [ ] teleport
 	- [ ] all directions including on its face

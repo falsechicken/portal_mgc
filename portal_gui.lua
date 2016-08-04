@@ -75,7 +75,7 @@ minetest.register_on_joinplayer(function(player)
 end)
 
 --portal_mgc.registerGate = function(player_name,pos,dir)
-portal_mgc.register_portal = function(player_name, pos, dir)
+portal_mgc.register_portal = function(player_name, pos, dir, dhd_pos)
 
 	if portal_network[player_name]==nil then
 		portal_network[player_name]={}
@@ -93,7 +93,12 @@ portal_mgc.register_portal = function(player_name, pos, dir)
 	
 	local infotext = "Portal\nOwned by: "..player_name
 	
-	portal_mgc.set_portal_meta(pos, dir, infotext, player_name, 0)
+	portal_mgc.set_portal_meta(pos, dir, infotext, player_name, dhd_pos)
+	
+	-- test
+	local tmp = portal_mgc.create_symbols_from_pos(pos, dir)
+	
+	print("test "..dump(tmp))
 	
 end
 
@@ -135,9 +140,14 @@ portal_mgc.findGate = function(pos)
 end
 
 
+-- return symbol
+portal_mgc.create_symbols_from_pos = function(pos, dir)
+		
+	return { symbol1=math.fmod(pos.x,4), symbol2=math.fmod(pos.y,4), symbol3=math.fmod(pos.z,4), symbol4=dir }
+end
 
 -- create portal infotext 
-portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, active)
+portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, dhd_pos)
 	-- set meta for all but keystone ring blocks
 	for __,v in pairs(portal_mgc.ring) do
 		if tonumber(orientation) == 1 or tonumber(orientation) == 3 then v = portal_mgc.swap_coordinates(v) end
@@ -152,10 +162,13 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, active
 	local meta = minetest.get_meta(pos)
 	meta:set_string("infotext", infotext)
 	meta:set_string("owner", owner)
-	meta:set_int("portal_active", active)
-
+	meta:set_int("portal_active", 0)
+	
+	if dhd_pos ~= nil then meta:set_string("portal_dhd", minetest.serialize(dhd_pos)) print("portal_dhd set ".. dump(dhd_pos)) end
 
 end
+
+
 
 
 --show formspec to player
@@ -225,8 +238,67 @@ portal_mgc.gateFormspecHandler = function(pos, node, clicker, itemstack)
 	if formspec ~=nil then minetest.show_formspec(player_name, "portal_main", formspec) end
 end
 
--- get_formspec
-portal_mgc.get_formspec = function(player_name,page)
+
+
+
+-- redo of formspec
+portal_mgc.get_formspec = function(player_name, page)
+	local formspec = "size[9.6,8]"
+
+	formspec = formspec .."background[-0.19,-0.3;10,8.8;ui_form_bg.png]"
+	
+-- pressed symbols
+formspec = formspec.."image[.5,0;1,1;symbol1.png]"
+formspec = formspec.."image[2,0;1,1;symbol2.png]"
+formspec = formspec.."image[3.5,0;1,1;symbol3.png]"
+formspec = formspec.."image[5,0;1,1;symbol4.png]"
+	
+	
+-- actual dialing device	
+formspec = formspec.."image_button[2.50,3;1.5,1.5;activate_portal.png;activate;]"
+formspec = formspec.."image_button[2.75,1.5;1,1;symbol1.png;symbol1;]"
+formspec = formspec.."image_button[4.5,3.25;1,1;symbol2.png;symbol2;]"
+formspec = formspec.."image_button[2.75,5;1,1;symbol3.png;symbol3;]"
+formspec = formspec.."image_button[1,3.25;1,1;symbol4.png;symbol4;]"
+
+
+-- current gates info
+formspec = formspec.."label[1.1,6.5;Address: 1234]"
+
+-- edit gate name if owner	
+formspec = formspec.."image_button[.5,6.9;.6,.6;pencil_icon.png;edit_name;]"
+formspec = formspec.."label[1.1,6.9;Name: somegatename]"
+		
+-- edit public/private if owner
+formspec = formspec.."image_button[.5,7.5;.6,.6;pencil_icon.png;toggle_type;]"
+formspec = formspec.."label[1.1,7.5;Private]"	
+	
+-- public portal index page select
+formspec = formspec.."image_button[6.3,1;.6,.6;left_icon.png;page_left;]"
+formspec=formspec.."label[7.5,1;1 of 104]"
+formspec = formspec.."image_button[9,1;.6,.6;right_icon.png;page_right;]"
+	
+-- TODO FIX
+-- public portal index (DO FOR EACH PORTAL, this is a template)
+formspec=formspec.."label[6.3,1.5;gatename]"	
+-- portal symbol address
+	formspec = formspec.."image[7.8.,1.5;.5,.5;symbol1.png]"
+	formspec = formspec.."image[8.2,1.5;.5,.5;symbol2.png]"
+	formspec = formspec.."image[8.6,1.5;.5,.5;symbol3.png]"
+	formspec = formspec.."image[9,1.5;.5,.5;symbol4.png]"
+	
+	
+	
+	return formspec
+end
+
+
+
+
+
+
+-- get_formspec -- TO BE DEPRECATED
+portal_mgc.get_formspec_old = function(player_name,page)
 	if player_name==nil then return nil end
 	portal_network["players"][player_name]["current_page"]=page
 	local temp_gate=portal_network["players"][player_name]["temp_gate"]
@@ -244,7 +316,7 @@ portal_mgc.get_formspec = function(player_name,page)
 											  ..temp_gate["destination"].y..","
 											  ..temp_gate["destination"].z..") "
 											  ..temp_gate["destination_description"].."]"
-		formspec = formspec.."image_button[2,1.2;.6,.6;cancel_icon.png;remove_dest;]"
+		--formspec = formspec.."image_button[2,1.2;.6,.6;cancel_icon.png;remove_dest;]"
 	else
 	formspec = formspec.."label[2,1.1;Not connected]"
 	end
@@ -299,11 +371,50 @@ portal_mgc.get_formspec = function(player_name,page)
 	formspec = formspec.."image_button[6.9,1.8;.6,.6;right_icon.png;page_right;]"
 	formspec = formspec.."image_button_exit[6.1,9.3;.8,.8;ok_icon.png;save_changes;]"
 	formspec = formspec.."image_button_exit[7.1,9.3;.8,.8;cancel_icon.png;discard_changes;]"
+	
+	
+	-- chevron dialer
+	formspec = formspec.."image_button[7,5;1.5,1.5;activate_portal.png;activate;]"
+	formspec = formspec.."image_button[7.1,3.5;1,1;symbol1.png;symbol1;]"
+	formspec = formspec.."image_button[8.5,5.1;1,1;symbol2.png;symbol2;]"
+	formspec = formspec.."image_button[7.1,6.5;1,1;symbol3.png;symbol3;]"
+	formspec = formspec.."image_button[5.7,5.1;1,1;symbol4.png;symbol4;]"
+	
+	
 	return formspec
 end
 
--- register_on_player_receive_fields
+
+-- redo of formspec
 minetest.register_on_player_receive_fields(function(player, formname, fields)
+	if not formname == "portal_dhd" then return "" end
+	
+	-- toggle private/public
+	if fields.toggle_type then
+	
+		return
+	end
+	
+		
+	-- activate
+	if fields.activate then 
+			-- do activation logic
+		return	
+	end
+	
+	-- set symbols
+	if fields.symbol1 then
+			
+	end
+
+		
+		
+end)
+
+
+-- TODO to be deprecated..
+-- register_on_player_receive_fields
+minetest.register_on_player_receive_fields_old = function(player, formname, fields)
 	if not formname == "portal_main" then return "" end
 	local player_name = player:get_player_name()
 	local temp_gate=portal_network["players"][player_name]["temp_gate"]
@@ -409,9 +520,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		if current_gate["destination"] then 
 			-- TODO delay activation?
-			activate_portal(current_gate["pos"], current_gate["dir"])
+			--activate_portal(current_gate["pos"], current_gate["dir"])
 		else
-			deactivate_portal(current_gate["pos"], current_gate["dir"])
+			--deactivate_portal(current_gate["pos"], current_gate["dir"])
 		end
 		if current_gate["type"]=="private" then infotext="Private"	else infotext="Public" end
 		infotext=infotext.." Gate: "..current_gate["description"].."\n"
@@ -420,7 +531,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			infotext=infotext.."Destination: ("..current_gate["destination"].x..","..current_gate["destination"].y..","..current_gate["destination"].z..") "
 			infotext=infotext..current_gate["destination_description"]
 		end
-		portal_mgc.set_portal_meta(current_gate["pos"], current_gate["dir"], infotext, player_name, 0)
+		portal_mgc.set_portal_meta(current_gate["pos"], current_gate["dir"], infotext, player_name, nil)
 		if portal_mgc.save_data(player_name)==nil then
 			minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
 		end
@@ -454,4 +565,4 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		minetest.show_formspec(player_name, "portal_main", formspec)
 	end
 	end
-end)
+end

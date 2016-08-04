@@ -42,7 +42,7 @@ local function check_for_portal_north(pos, data, area)
 	local meta = minetest.get_meta(pos)
 	local is_gate = meta:get_string("infotext")
 	--not sure if it's a great way for checking but it works atm
-	if is_gate ~= "" then print(is_gate) return false end	
+	if is_gate ~= "" then return false end	
 		
 	-- check for air if not correct no keystone anyway		
 	for __,v in pairs(portal_mgc.inside) do
@@ -74,15 +74,14 @@ local function check_for_portal_east(pos, data, area)
 	
 	local c_air = minetest.get_content_id("air")
 	local c_portal_material = minetest.get_content_id(portal_mgc.ring_material)
-	local c_portal_inside = minetest.get_content_id(portal_mgc.modname .. ":portal_block_inside")
+	--local c_portal_inside = minetest.get_content_id(portal_mgc.modname .. ":portal_block_inside")
 	
 	
-	-- TODO check if already registered as keystone so no other calc is needed
+	-- check if already registered as keystone so no other calc is needed
 	local meta = minetest.get_meta(pos)
-	local keystone = meta:get_string("portal_keystone")
-	if type(keystone) == "table" then print("already a registered gate") return false end
-	
-	--minetest.chat_send_all("check north?")
+	local is_gate = meta:get_string("infotext")
+	--not sure if it's a great way for checking but it works atm
+	if is_gate ~= "" then return false end	
 	
 	-- check for air if not correct no keystone anyway		
 	for __,v in pairs(portal_mgc.inside) do
@@ -111,6 +110,7 @@ end
 
 -- check for a gate at position of dhd with radius 
 local function find_gate_pos(pos, radius, player)	
+	local facedir
 	local minp = vector.subtract(pos, radius)
 	local maxp = vector.add(pos, radius)
 
@@ -123,14 +123,25 @@ local function find_gate_pos(pos, radius, player)
 	
 	local poslist = minetest.find_nodes_in_area(minp, maxp, portal_mgc.ring_material)
 	
+	
 	-- for each pos in poslist check if keystone
 	for __,v in pairs(poslist) do
 		if check_for_portal_north(v, data, area) then
 			local meta = minetest.get_meta(pos)
-			local facedir = get_dir_from_diff(pos, v)
+			--local facedir = get_dir_from_diff(pos, v)
+			
+			-- make sure facedir is correct for the portal e.g. dhd close to portal gives wrong facedir
+			--if facedir == 1 or facedir == 3 then
+				if v.z - pos.z <= 0 then 
+					facedir = 0
+				else 
+					facedir = 2
+				end
+			--end
+			
 			
 			-- register portal keystone
-			portal_mgc.register_portal(player_name, v, facedir)
+			portal_mgc.register_portal(player_name, v, facedir, pos)
 		
 			-- register portal with DHD
 			meta:set_string("portal_keystone", minetest.serialize(v))		
@@ -140,9 +151,19 @@ local function find_gate_pos(pos, radius, player)
 			return true
 		elseif check_for_portal_east(v, data, area) then
 			local meta = minetest.get_meta(pos)
-			local facedir = get_dir_from_diff(pos, v)
+			--local facedir = get_dir_from_diff(pos, v)
+			
+			-- make sure facedir is correct for the portal e.g. dhd close to portal gives wrong facedir
+			--if facedir == 0 or facedir == 2 then
+				if v.x - pos.x <= 0 then 
+					facedir = 1
+				else 
+					facedir = 3
+				end
+			--end			
+			
 			-- register portal keystone
-			portal_mgc.register_portal(player_name, v, facedir)
+			portal_mgc.register_portal(player_name, v, facedir, pos)
 			
 			-- register portal with DHD
 			meta:set_string("portal_keystone", minetest.serialize(v))		
@@ -158,7 +179,7 @@ local function find_gate_pos(pos, radius, player)
 end
 
 
--- activate portal by swapping the air nodes with diamond
+-- activate portal by swapping the air nodes with portal blocks
 function activate_portal(pos, orientation)
 	-- swap air with custom inside block
 	for __,v in pairs(portal_mgc.inside) do
@@ -228,14 +249,14 @@ minetest.register_node(portal_mgc.modname .. ":portal_block_inside", {
 	liquid_alternative_source = portal_mgc.modname .. ":portal_block_inside",
 	liquid_renewable = false,
 	liquid_range = 0,
-	collisionbox = {-0.5,-0.5,-0.5, 0.5,0.5,0.5},
+	--collisionbox = {-0.5,-0.5,-0.5, 0.5,0.5,0.5},
 	walkable = false,	
 		
 
 	pointable = false,
 	diggable = false,
 		
-	groups = { not_in_creative_inventory, cracky=5 },
+	groups = { not_in_creative_inventory, cracky=3 },
 		
 })
 
@@ -274,6 +295,9 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 	after_place_node = function(pos, placer, itemstack)
 		local meta = minetest.get_meta(pos)
 		meta:set_string("owner", placer:get_player_name())
+		
+			-- TODO tmp?
+			meta:set_int("portal_active", 0)
 					
 		-- check for available gate
 		local gate_pos = find_gate_pos(pos, portal_mgc.dhd_check_radius, placer)
@@ -303,16 +327,29 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 	-- technic_run = harvester_run,
 	
 		
-	-- TODO? enable/disble portal by punching?
-	-- old test function
+	-- enable/disble portal by punching
 	on_punch = function(pos) 
 		local meta = minetest.get_meta(pos)
 		minetest.get_node_timer(pos):start(2)
 			
 		end,
 		
-	on_timer = function(pos, elapsed)
-			minetest.chat_send_all("timer tick")
+	on_timer = function(pos, elapsed)	
+			-- toggle portal on/off
+			local meta = minetest.get_meta(pos)			
+			local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
+			local is_on = minetest.get_meta(ppos):get_int("portal_active")
+			local dir = meta:get_string("portal_dir")
+			
+			
+			if is_on == 1 then 
+				deactivate_portal(ppos, dir) 
+				minetest.get_meta(ppos):set_int("portal_active", 0)
+			else 
+				activate_portal(ppos, dir) 
+				minetest.get_meta(ppos):set_int("portal_active", 1)
+				minetest.get_node_timer(pos):start(portal_mgc.portal_time_open)
+			end
 			
 		end,
 		
@@ -326,15 +363,21 @@ minetest.register_abm({
 	chance = 1,
 	action = function(pos, node, active_object_count, active_object_count_wider)
 		local meta = minetest.get_meta(pos)
+			
+			-- TODO rearrange code so only if objects are near vars are set (now they are uselessly 'reset' for each object..
 		for _,object in ipairs(minetest.get_objects_inside_radius(pos, 1)) do
-			if object:is_player() then 
-				local player_name = object:get_player_name()
+			--if object:is_player() or true then 
+				--local player_name = object:get_player_name()
 					
 				local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
 				local owner = minetest.get_meta(ppos):get_string("owner")	
 									
 				local gate=portal_mgc.findGate (ppos)
 				if gate==nil then print("Gate is not registered!") return end
+					
+					-- TODO check if destination is set
+				if gate["destination"] == "" then return end	
+					
 				local pos1={}
 				pos1.x=gate["destination"].x
 				pos1.y=gate["destination"].y
@@ -346,7 +389,7 @@ minetest.register_abm({
 					portal_mgc.save_data(owner)
 					return
 				end
-				if player_name~=owner and gate["type"]=="private" then return end
+				--if player_name~=owner and gate["type"]=="private" then return end
 					
 				local dir1=gate["destination_dir"]
 				local dest_angle
@@ -366,11 +409,20 @@ minetest.register_abm({
 					
 				-- raise height?
 				pos1 = vector.add(pos1, {x=0,y=1,z=0})
-								
+							
+				-- teleport player
 				object:moveto(pos1,false)
 				object:set_look_yaw(math.rad(dest_angle))
 				core.sound_play("enterEventHorizon", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
-			end
+					
+				-- increase dhd timer by 2
+				local dpos = minetest.get_meta(ppos):get_string("portal_dhd")	
+				dpos = minetest.deserialize(dpos)					
+				local timer = minetest.get_node_timer(dpos)
+				timer:start(timer:get_timeout() + portal_mgc.portal_time_extra)
+					
+					
+			--end
 		end
 	end
 }) 

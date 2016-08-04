@@ -1,0 +1,16 @@
+Create a portal from Carbon-Steel blocks (default) and put down a DHD near it to register that portal.
+
+~bbbbb~
+bb___bb				b = block (default carbon-steel)
+b_____b				_ = air
+b_____b				~ can be anything
+b_____b				
+bb___bb
+~bbbbb~
+
+Portals teleport anybody (and any object such as vehicles or mobs) nearby (1block) to the destination portal
+
+
+
+
+
