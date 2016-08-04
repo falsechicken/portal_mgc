@@ -247,41 +247,41 @@ portal_mgc.get_formspec = function(player_name, page)
 
 	formspec = formspec .."background[-0.19,-0.3;10,8.8;ui_form_bg.png]"
 	
--- pressed symbols
-formspec = formspec.."image[.5,0;1,1;symbol1.png]"
-formspec = formspec.."image[2,0;1,1;symbol2.png]"
-formspec = formspec.."image[3.5,0;1,1;symbol3.png]"
-formspec = formspec.."image[5,0;1,1;symbol4.png]"
-	
-	
--- actual dialing device	
-formspec = formspec.."image_button[2.50,3;1.5,1.5;activate_portal.png;activate;]"
-formspec = formspec.."image_button[2.75,1.5;1,1;symbol1.png;symbol1;]"
-formspec = formspec.."image_button[4.5,3.25;1,1;symbol2.png;symbol2;]"
-formspec = formspec.."image_button[2.75,5;1,1;symbol3.png;symbol3;]"
-formspec = formspec.."image_button[1,3.25;1,1;symbol4.png;symbol4;]"
+	-- pressed symbols
+	formspec = formspec.."image[.5,0;1,1;symbol1.png]"
+	formspec = formspec.."image[2,0;1,1;symbol2.png]"
+	formspec = formspec.."image[3.5,0;1,1;symbol3.png]"
+	formspec = formspec.."image[5,0;1,1;symbol4.png]"
 
 
--- current gates info
-formspec = formspec.."label[1.1,6.5;Address: 1234]"
+	-- actual dialing device	
+	formspec = formspec.."image_button[2.50,3;1.5,1.5;activate_portal.png;activate;]"
+	formspec = formspec.."image_button[2.75,1.5;1,1;symbol1.png;symbol1;]"
+	formspec = formspec.."image_button[4.5,3.25;1,1;symbol2.png;symbol2;]"
+	formspec = formspec.."image_button[2.75,5;1,1;symbol3.png;symbol3;]"
+	formspec = formspec.."image_button[1,3.25;1,1;symbol4.png;symbol4;]"
 
--- edit gate name if owner	
-formspec = formspec.."image_button[.5,6.9;.6,.6;pencil_icon.png;edit_name;]"
-formspec = formspec.."label[1.1,6.9;Name: somegatename]"
-		
--- edit public/private if owner
-formspec = formspec.."image_button[.5,7.5;.6,.6;pencil_icon.png;toggle_type;]"
-formspec = formspec.."label[1.1,7.5;Private]"	
-	
--- public portal index page select
-formspec = formspec.."image_button[6.3,1;.6,.6;left_icon.png;page_left;]"
-formspec=formspec.."label[7.5,1;1 of 104]"
-formspec = formspec.."image_button[9,1;.6,.6;right_icon.png;page_right;]"
-	
--- TODO FIX
--- public portal index (DO FOR EACH PORTAL, this is a template)
-formspec=formspec.."label[6.3,1.5;gatename]"	
--- portal symbol address
+
+	-- current gates info
+	formspec = formspec.."label[1.1,6.5;Address: 1234]"
+
+	-- edit gate name if owner	
+	formspec = formspec.."image_button[.5,6.9;.6,.6;pencil_icon.png;edit_name;]"
+	formspec = formspec.."label[1.1,6.9;Name: somegatename]"
+
+	-- edit public/private if owner
+	formspec = formspec.."image_button[.5,7.5;.6,.6;pencil_icon.png;toggle_type;]"
+	formspec = formspec.."label[1.1,7.5;Private]"	
+
+	-- public portal index page select
+	formspec = formspec.."image_button[6.3,1;.6,.6;left_icon.png;page_left;]"
+	formspec=formspec.."label[7.5,1;1 of 104]"
+	formspec = formspec.."image_button[9,1;.6,.6;right_icon.png;page_right;]"
+
+	-- TODO FIX
+	-- public portal index (DO FOR EACH PORTAL, this is a template)
+	formspec=formspec.."label[6.3,1.5;gatename]"	
+	-- portal symbol address
 	formspec = formspec.."image[7.8.,1.5;.5,.5;symbol1.png]"
 	formspec = formspec.."image[8.2,1.5;.5,.5;symbol2.png]"
 	formspec = formspec.."image[8.6,1.5;.5,.5;symbol3.png]"
