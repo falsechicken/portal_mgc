@@ -199,9 +199,8 @@ function activate_portal(pos, orientation)
 	
 	
 	minetest.sound_play("gateOpen", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
-	minetest.chat_send_all("activated")
-	
-			
+	--minetest.chat_send_all("activated")
+				
 end
 
 
@@ -219,7 +218,7 @@ function deactivate_portal(pos, orientation)
 	end
 	
 	minetest.sound_play("gateClose", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
-	minetest.chat_send_all("deactivated")
+	--minetest.chat_send_all("deactivated")
 			
 end
 
@@ -372,7 +371,7 @@ minetest.register_abm({
 				local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
 				local owner = minetest.get_meta(ppos):get_string("owner")	
 									
-				local gate=portal_mgc.findGate (ppos)
+				local gate=portal_mgc.find_gate (ppos)
 				if gate==nil then print("Gate is not registered!") return end
 					
 					-- TODO check if destination is set
@@ -382,7 +381,7 @@ minetest.register_abm({
 				pos1.x=gate["destination"].x
 				pos1.y=gate["destination"].y
 				pos1.z=gate["destination"].z
-				local dest_gate=portal_mgc.findGate (pos1)
+				local dest_gate=portal_mgc.find_gate (pos1)
 				if dest_gate==nil then 
 					gate["destination"]=nil
 					deactivate_portal(ppos, gate["dir"])

@@ -1,7 +1,8 @@
 -- default GUI page
 portal_mgc.default_page = "main"
-portal_network["players"]={}
-portal_mgc.current_page={}
+
+local K_PORTALS = "registered_portals"
+
 
 local function table_empty(tab)
 	for key in pairs(tab) do return false end
@@ -9,7 +10,7 @@ local function table_empty(tab)
 end
 
 portal_mgc.save_data = function(table_pointer)
-	if table_empty(portal_network[table_pointer]) then return end
+	--if table_empty(portal_network[table_pointer]) then return end
 	local data = minetest.serialize( portal_network[table_pointer] )
 	local path = minetest.get_worldpath().."/portal_"..table_pointer..".data"
 	local file = io.open( path, "w" )
@@ -35,84 +36,48 @@ portal_mgc.restore_data = function(table_pointer)
 end
 
 -- load portals network data
-if portal_mgc.restore_data("registered_players") ~= nil then
-	for __,tab in ipairs(portal_network["registered_players"]) do
-		if portal_mgc.restore_data(tab["player_name"]) == nil  then
-			--print ("[portal] Error loading data!")
-			portal_network[tab["player_name"]] = {}
-		end
-	end
-else
-	print ("[portal] Error loading data! Creating new file.")
-	portal_network["registered_players"]={}
-	portal_mgc.save_data("registered_players")
+if portal_mgc.restore_data(K_PORTALS) == nil then
+	print ("[portal] Error loading data! Creating new file. " .. K_PORTALS)
+	portal_network[K_PORTALS]={}
+	portal_mgc.save_data(K_PORTALS)
 end
 
--- register_on_joinplayer
-minetest.register_on_joinplayer(function(player)
-	local player_name = player:get_player_name()
-	local registered=nil
-	for __,tab in ipairs(portal_network["registered_players"]) do
-		if tab["player_name"] ==  player_name then registered = true break end
-	end
-	if registered == nil then
-		local new={}
-		new["player_name"]=player_name
-		table.insert(portal_network["registered_players"],new)
-		portal_network[player_name]={}
-		portal_mgc.save_data("registered_players")
-		portal_mgc.save_data(player_name)
-	end
-	portal_network["players"][player_name]={}
-	portal_network["players"][player_name]["formspec"]=""
-	portal_network["players"][player_name]["current_page"]=portal_mgc.default_page
-	portal_network["players"][player_name]["own_gates"]={}
-	portal_network["players"][player_name]["own_gates_count"]=0
-	portal_network["players"][player_name]["public_gates"]={}
-	portal_network["players"][player_name]["public_gates_count"]=0
-	portal_network["players"][player_name]["current_index"]=0
-	portal_network["players"][player_name]["temp_gate"]={}
-end)
 
---portal_mgc.registerGate = function(player_name,pos,dir)
+
+-- register new portal
 portal_mgc.register_portal = function(player_name, pos, dir, dhd_pos)
-
-	if portal_network[player_name]==nil then
-		portal_network[player_name]={}
-	end
+	local address = portal_mgc.create_symbols()
+	
 	local new_gate ={}
 	new_gate["pos"]=pos
-	new_gate["type"]="private"
-	new_gate["description"]=""
+	new_gate["type"]="public"
+	new_gate["name"]= address.s1 .. address.s2 .. address.s3 .. address.s4
 	new_gate["dir"]=dir
 	new_gate["owner"]=player_name
-	table.insert(portal_network[player_name],new_gate)
-	if portal_mgc.save_data(player_name)==nil then
+	new_gate["address"]= address
+	new_gate["destination"] = { s1=0, s2=0, s3=0, s4=0 }
+	table.insert(portal_network[K_PORTALS],new_gate)
+	if portal_mgc.save_data(K_PORTALS)==nil then
 		minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
 	end
 	
 	local infotext = "Portal\nOwned by: "..player_name
 	
 	portal_mgc.set_portal_meta(pos, dir, infotext, player_name, dhd_pos)
-	
-	-- test
-	local tmp = portal_mgc.create_symbols_from_pos(pos, dir)
-	
-	print("test "..dump(tmp))
-	
+		
 end
 
 
 portal_mgc.unregister_portal = function(player_name,gate_pos)	
 	local dir
-	for __,gate in ipairs(portal_network[player_name]) do
+	for __,gate in ipairs(portal_network[K_PORTALS]) do
 		if gate["pos"].x==gate_pos.x and gate["pos"].y==gate_pos.y and gate["pos"].z==gate_pos.z then
 			dir = gate["dir"]
-			table.remove(portal_network[player_name], __)
+			table.remove(portal_network[K_PORTALS], __)
 			break
 		end
 	end
-	if portal_mgc.save_data(player_name)==nil then
+	if portal_mgc.save_data(K_PORTALS)==nil then
 		minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
 	end
 		
@@ -123,27 +88,47 @@ end
 
 
 -- used in gate_defs/portal.lua for teleport
-portal_mgc.findGate = function(pos)
-	for __,tab in ipairs(portal_network["registered_players"]) do
-		local player_name=tab["player_name"]
-		if type(portal_network[player_name])=="table" then
-			for __,gate in ipairs(portal_network[player_name]) do
-				if gate then 
-					if gate["pos"].x==pos.x and gate["pos"].y==pos.y and gate["pos"].z==pos.z then
-						return gate
-					end
-				end
-			end
+portal_mgc.find_gate = function(pos)
+	for __,gate in ipairs(portal_network[K_PORTALS]) do
+		if gate["pos"].x==pos.x and gate["pos"].y==pos.y and gate["pos"].z==pos.z then
+			return gate
 		end
 	end
 	return nil
 end
 
+portal_mgc.find_gate_by_symbol = function(address)
+	for __,gate in ipairs(portal_network[K_PORTALS]) do
+		if gate["address"].s1 == address.s1 and gate["address"].s2 == address.s2 and gate["address"].s3 == address.s3 and gate["address"].s4 == address.s4 then
+			return gate
+		end
+	end
+	return nil	
+end
 
--- return symbol
-portal_mgc.create_symbols_from_pos = function(pos, dir)
-		
-	return { symbol1=math.fmod(pos.x,4), symbol2=math.fmod(pos.y,4), symbol3=math.fmod(pos.z,4), symbol4=dir }
+
+-- return symbol 
+portal_mgc.create_symbols = function()
+	
+	local tmp = {}
+	tmp.s1 = math.random(1,4)
+	tmp.s2 = math.random(1,4)
+	tmp.s3 = math.random(1,4)
+	tmp.s4 = math.random(1,4)
+	
+	local isduplicate = nil
+	
+	-- see if address is already taken
+	-- TODO properly test...
+	for __,gate in pairs(portal_network[K_PORTALS]) do 
+		if gate["address"].s1 == tmp.s1 and gate["address"].s2 == tmp.s2 and gate["address"].s3 == tmp.s3 and gate["address"].s4 == tmp.s4 then
+			-- duplicate, try again
+			tmp = portal_mgc.create_symbols()
+		end
+	end
+	
+	return tmp
+	
 end
 
 -- create portal infotext 
@@ -158,6 +143,7 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, dhd_po
 		meta:set_string("owner", owner)	
 	end
 	
+	-- TODO perhaps add keystone to the ring?
 	-- don't forget about the keystone (it's not in the ring)
 	local meta = minetest.get_meta(pos)
 	meta:set_string("infotext", infotext)
@@ -170,7 +156,6 @@ end
 
 
 
-
 --show formspec to player
 portal_mgc.gateFormspecHandler = function(pos, node, clicker, itemstack)
 	local player_name = clicker:get_player_name()
@@ -178,64 +163,33 @@ portal_mgc.gateFormspecHandler = function(pos, node, clicker, itemstack)
 	local owner=meta:get_string("owner")
 	if player_name~=owner then return end
 	local current_gate=nil
-	portal_network["players"][player_name]["own_gates"]={}
-	portal_network["players"][player_name]["public_gates"]={}
-	local own_gates_count=0
-	local public_gates_count=0
+
 
 	local gatepos = minetest.deserialize(meta:get_string("portal_keystone"))
 	if gatepos == nil then minetest.chat_send_player(player_name, "Not registered to a portal, replace near portal.") return end
 	
-	for __,gate in ipairs(portal_network[player_name]) do
+	for __,gate in ipairs(portal_network[K_PORTALS]) do
 		if gate["pos"].x==gatepos.x and gate["pos"].y==gatepos.y and gate["pos"].z==gatepos.z then
 			current_gate=gate
-		else
-		own_gates_count=own_gates_count+1
-		table.insert(portal_network["players"][player_name]["own_gates"],gate)
 		end
 	end
-	portal_network["players"][player_name]["own_gates_count"]=own_gates_count
 
-	-- get all public gates
-	for __,tab in ipairs(portal_network["registered_players"]) do
-		local temp=tab["player_name"]
-		if type(portal_network[temp])=="table" and temp~=player_name then
-			for __,gates in ipairs(portal_network[temp]) do
-				if gates["type"]=="public" then 
-					public_gates_count=public_gates_count+1
-					table.insert(portal_network["players"][player_name]["public_gates"],gates)
-					end
-				end
-			end
+	-- TODO delete or do something with it
+	for __,gate in ipairs(portal_network[K_PORTALS]) do
+		if gate["type"]=="public" then 
 		end
-
+	end
+	
 	--print(dump(portal_network["players"][player_name]["public_gates"]))
 	if current_gate==nil then 
 		minetest.chat_send_player(player_name, "Gate not registered in network! Please remove it and place once again.")
 		return nil
 	end
-	portal_network["players"][player_name]["current_index"]=0
-	portal_network["players"][player_name]["temp_gate"]["type"]=current_gate["type"]
-	portal_network["players"][player_name]["temp_gate"]["description"]=current_gate["description"]
-	portal_network["players"][player_name]["temp_gate"]["pos"]={}
-	portal_network["players"][player_name]["temp_gate"]["pos"].x=current_gate["pos"].x
-	portal_network["players"][player_name]["temp_gate"]["pos"].y=current_gate["pos"].y
-	portal_network["players"][player_name]["temp_gate"]["pos"].z=current_gate["pos"].z
-	if current_gate["destination"] then 
-		portal_network["players"][player_name]["temp_gate"]["destination_description"]=current_gate["destination_description"]
-		portal_network["players"][player_name]["temp_gate"]["destination_dir"]=current_gate["destination_dir"]
-		portal_network["players"][player_name]["temp_gate"]["destination"]={}
-		portal_network["players"][player_name]["temp_gate"]["destination"].x=current_gate["destination"].x
-		portal_network["players"][player_name]["temp_gate"]["destination"].y=current_gate["destination"].y
-		portal_network["players"][player_name]["temp_gate"]["destination"].z=current_gate["destination"].z
-	else
-		portal_network["players"][player_name]["temp_gate"]["destination"]=nil
-	end
-	portal_network["players"][player_name]["current_gate"]=current_gate
-	portal_network["players"][player_name]["dest_type"]="own"
-	local formspec=portal_mgc.get_formspec(player_name,"main")
-	portal_network["players"][player_name]["formspec"]=formspec
-	if formspec ~=nil then minetest.show_formspec(player_name, "portal_main", formspec) end
+
+	portal_network["current_gate"]=current_gate
+
+	local formspec=portal_mgc.get_formspec(player_name, "main")
+	if formspec ~=nil then minetest.show_formspec(player_name, "portal_dhd", formspec) end
 end
 
 
@@ -243,19 +197,25 @@ end
 
 -- redo of formspec
 portal_mgc.get_formspec = function(player_name, page)
+	local current_portal = portal_network["current_gate"]
+		
+	local owner = current_portal["owner"]
+	
 	local formspec = "size[9.6,8]"
 
+	print(dump(portal_network))
+	
 	formspec = formspec .."background[-0.19,-0.3;10,8.8;ui_form_bg.png]"
 	
-	-- pressed symbols
-	formspec = formspec.."image[.5,0;1,1;symbol1.png]"
-	formspec = formspec.."image[2,0;1,1;symbol2.png]"
-	formspec = formspec.."image[3.5,0;1,1;symbol3.png]"
-	formspec = formspec.."image[5,0;1,1;symbol4.png]"
+	-- pressed symbols / destination
+	formspec = formspec.."image[.5,0;1,1;symbol"..current_portal["destination"].s1 .. ".png]"
+	formspec = formspec.."image[2,0;1,1;symbol"..current_portal["destination"].s2 .. ".png]"
+	formspec = formspec.."image[3.5,0;1,1;symbol"..current_portal["destination"].s3 .. ".png]"
+	formspec = formspec.."image[5,0;1,1;symbol"..current_portal["destination"].s4 .. ".png]"
 
 
 	-- actual dialing device	
-	formspec = formspec.."image_button[2.50,3;1.5,1.5;activate_portal.png;activate;]"
+	formspec = formspec.."image_button_exit[2.50,3;1.5,1.5;activate_portal.png;activate;]"
 	formspec = formspec.."image_button[2.75,1.5;1,1;symbol1.png;symbol1;]"
 	formspec = formspec.."image_button[4.5,3.25;1,1;symbol2.png;symbol2;]"
 	formspec = formspec.."image_button[2.75,5;1,1;symbol3.png;symbol3;]"
@@ -263,306 +223,152 @@ portal_mgc.get_formspec = function(player_name, page)
 
 
 	-- current gates info
-	formspec = formspec.."label[1.1,6.5;Address: 1234]"
+	if page ~= "edit_name" then
+		local adr = current_portal["address"]
+		formspec = formspec.."label[1.1,6.5;Address: ".. adr.s1 .. adr.s2 .. adr.s3 .. adr.s4 .."]"
+	end
 
-	-- edit gate name if owner	
-	formspec = formspec.."image_button[.5,6.9;.6,.6;pencil_icon.png;edit_name;]"
-	formspec = formspec.."label[1.1,6.9;Name: somegatename]"
-
+	-- edit gate name if owner		
+	if player_name == owner and page == "edit_name" then 
+		formspec = formspec.."image_button[.5,6.9;.6,.6;ok_icon.png;save_name;]"
+		formspec = formspec.."field[1.3,6.9;5,1;name_box;Edit name:;" .. current_portal["name"].."]"
+	else 
+		-- normal page
+		if player_name == owner then formspec = formspec.."image_button[.5,6.9;.6,.6;pencil_icon.png;edit_name;]" end
+		formspec = formspec.."label[1.1,6.9;Name: " .. current_portal["name"].."]"
+	end
+			
+		
 	-- edit public/private if owner
-	formspec = formspec.."image_button[.5,7.5;.6,.6;pencil_icon.png;toggle_type;]"
-	formspec = formspec.."label[1.1,7.5;Private]"	
+	if player_name == owner then formspec = formspec.."image_button[.5,7.5;.6,.6;toggle_icon.png;toggle_type;]" end
+	formspec = formspec.."label[1.1,7.5;"..current_portal["type"].."]"	
 
 	-- public portal index page select
 	formspec = formspec.."image_button[6.3,1;.6,.6;left_icon.png;page_left;]"
 	formspec=formspec.."label[7.5,1;1 of 104]"
 	formspec = formspec.."image_button[9,1;.6,.6;right_icon.png;page_right;]"
 
-	-- TODO FIX
-	-- public portal index (DO FOR EACH PORTAL, this is a template)
-	formspec=formspec.."label[6.3,1.5;gatename]"	
-	-- portal symbol address
-	formspec = formspec.."image[7.8.,1.5;.5,.5;symbol1.png]"
-	formspec = formspec.."image[8.2,1.5;.5,.5;symbol2.png]"
-	formspec = formspec.."image[8.6,1.5;.5,.5;symbol3.png]"
-	formspec = formspec.."image[9,1.5;.5,.5;symbol4.png]"
 	
-	
-	
-	return formspec
-end
-
-
-
-
-
-
--- get_formspec -- TO BE DEPRECATED
-portal_mgc.get_formspec_old = function(player_name,page)
-	if player_name==nil then return nil end
-	portal_network["players"][player_name]["current_page"]=page
-	local temp_gate=portal_network["players"][player_name]["temp_gate"]
-	local formspec = "size[14,10]"
-	--background
-	formspec = formspec .."background[-0.19,-0.2;14.38,10.55;ui_form_bg.png]"
-	formspec = formspec.."label[0,0.0;portal DHD]"
-	formspec = formspec.."label[0,.5;Position: ("..temp_gate["pos"].x..","..temp_gate["pos"].y..","..temp_gate["pos"].z..")]"
-	formspec = formspec.."image_button[3.5,.6;.6,.6;toggle_icon.png;toggle_type;]"
-	formspec = formspec.."label[4,.5;Type: "..temp_gate["type"].."]"
-	formspec = formspec.."image_button[6.5,.6;.6,.6;pencil_icon.png;edit_desc;]"
-	formspec = formspec.."label[0,1.1;Destination: ]"
-	if temp_gate["destination"] then 
-		formspec = formspec.."label[2.5,1.1;("..temp_gate["destination"].x..","
-											  ..temp_gate["destination"].y..","
-											  ..temp_gate["destination"].z..") "
-											  ..temp_gate["destination_description"].."]"
-		--formspec = formspec.."image_button[2,1.2;.6,.6;cancel_icon.png;remove_dest;]"
-	else
-	formspec = formspec.."label[2,1.1;Not connected]"
-	end
-	formspec = formspec.."label[0,1.7;Aviable destinations:]"
-	formspec = formspec.."image_button[3.5,1.8;.6,.6;toggle_icon.png;toggle_dest_type;]"
-	formspec = formspec.."label[4,1.7;Filter: "..portal_network["players"][player_name]["dest_type"].."]"
-
-	if page=="main" then
-	formspec = formspec.."image_button[6.5,.6;.6,.6;pencil_icon.png;edit_desc;]"
-	formspec = formspec.."label[7,.5;Description: "..temp_gate["description"].."]"
-	end
-	if page=="edit_desc" then
-	formspec = formspec.."image_button[6.5,.6;.6,.6;ok_icon.png;save_desc;]"
-	formspec = formspec.."field[7.3,.7;5,1;desc_box;Edit gate description:;"..temp_gate["description"].."]"
-	end
-	
-	local list_index=portal_network["players"][player_name]["current_index"]
-	local page=math.floor(list_index / 24 + 1)
-	local pagemax
-	if portal_network["players"][player_name]["dest_type"] == "own" then 
-		pagemax = math.floor((portal_network["players"][player_name]["own_gates_count"] / 24) + 1)
+	local portals = portal_network[K_PORTALS]
+	local offset = 0
+	for __,portal in pairs(portals) do
+		if portal["pos"] ~= current_portal["pos"] and portal["type"] == "public" then
 			
-		local x,y
-		for y=0,7,1 do
-		for x=0,2,1 do
-			local gate_temp=portal_network["players"][player_name]["own_gates"][list_index+1]
-			if gate_temp then
-				formspec = formspec.."image_button["..(x*4.5)..","..(2.5+y*.87)..";.6,.6;portal_icon.png;list_button"..list_index..";]"
-				formspec = formspec.."label["..(x*4.5+.5)..","..(2.3+y*.87)..";("..gate_temp["pos"].x..","..gate_temp["pos"].y..","..gate_temp["pos"].z..") "..gate_temp["type"].."]"
-				formspec = formspec.."label["..(x*4.5+.5)..","..(2.7+y*.87)..";"..gate_temp["description"].."]"
-			end
-			list_index=list_index+1
-		end
-		end
-	else
-		pagemax = math.floor((portal_network["players"][player_name]["public_gates_count"] / 24) + 1)
-		local x,y
-		for y=0,7,1 do
-		for x=0,2,1 do
-			local gate_temp=portal_network["players"][player_name]["public_gates"][list_index+1]
-			if gate_temp then
-				formspec = formspec.."image_button["..(x*4.5)..","..(2.5+y*.87)..";.6,.6;portal_icon.png;list_button"..list_index..";]"
-				formspec = formspec.."label["..(x*4.5+.5)..","..(2.3+y*.87)..";("..gate_temp["pos"].x..","..gate_temp["pos"].y..","..gate_temp["pos"].z..") "..gate_temp["owner"].."]"
-				formspec = formspec.."label["..(x*4.5+.5)..","..(2.7+y*.87)..";"..gate_temp["description"].."]"
-			end
-			list_index=list_index+1
-		end
-		end
+			-- public portal index 
+			formspec=formspec.."label[6.3,"..(1.6+offset)..";"..portal["name"].."]"	
+			-- portal symbol address
+			formspec = formspec.."image[7.8,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s1 ..".png]"
+			formspec = formspec.."image[8.2,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s2 ..".png]"
+			formspec = formspec.."image[8.6,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s3 ..".png]"
+			formspec = formspec.."image[9,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s4 ..".png]"
+			
+			offset = offset + 0.6
+			
+		end		
 	end
-	formspec=formspec.."label[7.5,1.7;Page: "..page.." of "..pagemax.."]"
-	formspec = formspec.."image_button[6.5,1.8;.6,.6;left_icon.png;page_left;]"
-	formspec = formspec.."image_button[6.9,1.8;.6,.6;right_icon.png;page_right;]"
-	formspec = formspec.."image_button_exit[6.1,9.3;.8,.8;ok_icon.png;save_changes;]"
-	formspec = formspec.."image_button_exit[7.1,9.3;.8,.8;cancel_icon.png;discard_changes;]"
-	
-	
-	-- chevron dialer
-	formspec = formspec.."image_button[7,5;1.5,1.5;activate_portal.png;activate;]"
-	formspec = formspec.."image_button[7.1,3.5;1,1;symbol1.png;symbol1;]"
-	formspec = formspec.."image_button[8.5,5.1;1,1;symbol2.png;symbol2;]"
-	formspec = formspec.."image_button[7.1,6.5;1,1;symbol3.png;symbol3;]"
-	formspec = formspec.."image_button[5.7,5.1;1,1;symbol4.png;symbol4;]"
-	
 	
 	return formspec
 end
+
+
+local function portal_dial(symbol)
+	local adr = portal_network["current_gate"]["destination"]
+	
+	if adr.s1 > 0 then
+		if adr.s2 > 0 then
+			if adr.s3 > 0 then
+				if adr.s4 > 0 then
+					-- empty and set s1
+					adr.s1 = symbol
+					adr.s2, adr.s3, adr.s4 = 0, 0, 0
+				else adr.s4 = symbol end
+			else adr.s3 = symbol end
+		else adr.s2 = symbol end		
+	else adr.s1 = symbol end
+	
+	portal_network["current_gate"]["destination"] = adr
+	
+end
+
 
 
 -- redo of formspec
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-	if not formname == "portal_dhd" then return "" end
+	if not formname == "portal_dhd" then return end
 	
+	local portal = portal_network["current_gate"]
+	local player_name = player:get_player_name()
+	local formspec
+		
 	-- toggle private/public
 	if fields.toggle_type then
-	
+		if portal["type"] == "private" then 
+			portal["type"] = "public"
+		else portal["type"] = "private" end
+
+		minetest.show_formspec(player_name, "portal_main", portal_mgc.get_formspec(player_name, "main"))
+		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
 		return
 	end
 	
+	if fields.edit_name then
+		formspec = portal_mgc.get_formspec(player_name,"edit_name")
+		minetest.show_formspec(player_name, "portal_dhd", formspec)
+		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
+		return
+	end
 		
-	-- activate
+		
+	if fields.save_name then
+		portal["name"]=fields.name_box
+		formspec= portal_mgc.get_formspec(player_name,"main")
+		minetest.show_formspec(player_name, "portal_dhd", formspec)
+		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
+		return
+	end
+		
+	-- activate TODO fix logic...
 	if fields.activate then 
-			-- do activation logic
-		return	
+		local dest = portal_mgc.find_gate_by_symbol(portal["destination"])	
+			
+		-- if s4 isn't set clear symbols and show formspec again
+		if portal["destination"].s4 == 0 or dest == nil then
+			portal["destination"] = { s1=0,s2=0,s3=0,s4=0 }
+			minetest.show_formspec(player_name, "portal_dhd", portal_mgc.get_formspec(player_name, "main"))
+			minetest.sound_play("gateSpin", {pos = portal["pos"], gain = 0.5,loop = false, max_hear_distance = 16,})
+			return
+		end
+
+		
+			
+		portal["destination"].x = dest["pos"].x
+		portal["destination"].y = dest["pos"].y
+		portal["destination"].z = dest["pos"].z
+		
+		portal["destination_dir"] = dest["dir"]	
+			
+		-- do activation logic
+		activate_portal(portal["pos"], portal["dir"])
+			
+			
+		return 
 	end
 	
 	-- set symbols
-	if fields.symbol1 then
+	if fields.symbol1 then portal_dial(1) end
+	if fields.symbol2 then portal_dial(2) end
+	if fields.symbol3 then portal_dial(3) end
+	if fields.symbol4 then portal_dial(4) end
+		
+	if fields.symbol1 or fields.symbol2 or fields.symbol3 or fields.symbol4 then
+		minetest.show_formspec(player_name, "portal_dhd", portal_mgc.get_formspec(player_name, "main"))
 			
+		-- TODO find dhd dialing sound and play for all?	
+		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
+		return
 	end
-
+		
 		
 		
 end)
 
-
--- TODO to be deprecated..
--- register_on_player_receive_fields
-minetest.register_on_player_receive_fields_old = function(player, formname, fields)
-	if not formname == "portal_main" then return "" end
-	local player_name = player:get_player_name()
-	local temp_gate=portal_network["players"][player_name]["temp_gate"]
-	local current_gate=portal_network["players"][player_name]["current_gate"]
-	local formspec
-
-	if fields.toggle_type then
-		if temp_gate["type"] == "private" then 
-			temp_gate["type"] = "public"
-		else temp_gate["type"] = "private" end
-		portal_network["players"][player_name]["current_index"]=0
-		formspec= portal_mgc.get_formspec(player_name,"main")
-		portal_network["players"][player_name]["formspec"] = formspec
-		minetest.show_formspec(player_name, "portal_main", formspec)
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		return
-	end
-	if fields.toggle_dest_type then
-		if portal_network["players"][player_name]["dest_type"] == "own" then 
-			portal_network["players"][player_name]["dest_type"] = "all public"
-		else portal_network["players"][player_name]["dest_type"] = "own" end
-		portal_network["players"][player_name]["current_index"] = 0
-		formspec = portal_mgc.get_formspec(player_name,"main")
-		portal_network["players"][player_name]["formspec"] = formspec
-		minetest.show_formspec(player_name, "portal_main", formspec)
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		return
-	end
-	if fields.edit_desc then
-		formspec= portal_mgc.get_formspec(player_name,"edit_desc")
-		portal_network["players"][player_name]["formspec"]=formspec
-		minetest.show_formspec(player_name, "portal_main", formspec)
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		return
-	end
-
-	if fields.save_desc then
-		temp_gate["description"]=fields.desc_box
-		formspec= portal_mgc.get_formspec(player_name,"main")
-		portal_network["players"][player_name]["formspec"]=formspec
-		minetest.show_formspec(player_name, "portal_main", formspec)
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		return
-	end
-	
-	-- page controls
-	local start=math.floor(portal_network["players"][player_name]["current_index"]/24 +1 )
-	local start_i=start
-	local pagemax = math.floor(((portal_network["players"][player_name]["own_gates_count"]-1) / 24) + 1)
-	
-	if fields.page_left then
-		minetest.sound_play("paperflip2", {to_player=player_name, gain = 1.0})
-		start_i = start_i - 1
-		if start_i < 1 then	start_i = 1	end
-		if not (start_i	== start) then
-			portal_network["players"][player_name]["current_index"] = (start_i-1)*24
-			formspec = portal_mgc.get_formspec(player_name,"main")
-			portal_network["players"][player_name]["formspec"] = formspec
-			minetest.show_formspec(player_name, "portal_main", formspec)
-		end
-	end
-	if fields.page_right then
-		minetest.sound_play("paperflip2", {to_player=player_name, gain = 1.0})
-		start_i = start_i + 1 
-		if start_i > pagemax then start_i =  pagemax end
-		if not (start_i	== start) then
-			portal_network["players"][player_name]["current_index"] = (start_i-1)*24
-			formspec = portal_mgc.get_formspec(player_name,"main")
-			portal_network["players"][player_name]["formspec"] = formspec
-			minetest.show_formspec(player_name, "portal_main", formspec)
-		end
-	end
-
-	if fields.remove_dest then
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		temp_gate["destination"]=nil
-		temp_gate["destination_description"]=nil
-		formspec = portal_mgc.get_formspec(player_name,"main")
-		portal_network["players"][player_name]["formspec"] = formspec
-		minetest.show_formspec(player_name, "portal_main", formspec)
-	end
-
-	if fields.save_changes then
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		local meta = minetest.get_meta(temp_gate["pos"])
-		local infotext=""
-		current_gate["type"]=temp_gate["type"]
-		current_gate["description"]=temp_gate["description"]
-		current_gate["pos"]={}
-		current_gate["pos"].x=temp_gate["pos"].x
-		current_gate["pos"].y=temp_gate["pos"].y
-		current_gate["pos"].z=temp_gate["pos"].z
-		current_gate["dest"]=temp_gate["dest"]
-		if temp_gate["destination"] then 
-			current_gate["destination"]={}
-			current_gate["destination"].x=temp_gate["destination"].x
-			current_gate["destination"].y=temp_gate["destination"].y
-			current_gate["destination"].z=temp_gate["destination"].z
-			current_gate["destination_description"]=temp_gate["destination_description"]
-			current_gate["destination_dir"]=temp_gate["destination_dir"]
-		else
-			current_gate["destination"]=nil
-		end
-		if current_gate["destination"] then 
-			-- TODO delay activation?
-			--activate_portal(current_gate["pos"], current_gate["dir"])
-		else
-			--deactivate_portal(current_gate["pos"], current_gate["dir"])
-		end
-		if current_gate["type"]=="private" then infotext="Private"	else infotext="Public" end
-		infotext=infotext.." Gate: "..current_gate["description"].."\n"
-		infotext=infotext.."Owned by "..player_name.."\n"
-		if current_gate["destination"] then 
-			infotext=infotext.."Destination: ("..current_gate["destination"].x..","..current_gate["destination"].y..","..current_gate["destination"].z..") "
-			infotext=infotext..current_gate["destination_description"]
-		end
-		portal_mgc.set_portal_meta(current_gate["pos"], current_gate["dir"], infotext, player_name, nil)
-		if portal_mgc.save_data(player_name)==nil then
-			minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
-		end
-	end
-
-	if fields.discard_changes then
-		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-	end
-
-	local list_index=portal_network["players"][player_name]["current_index"]
-	local i
-	for i=0,23,1 do
-	local button="list_button"..i+list_index
-	if fields[button] then 
-		minetest.sound_play("click", {to_player=player_name, gain = 1.0})
-		local gate=portal_network["players"][player_name]["temp_gate"]
-		local dest_gate
-		if portal_network["players"][player_name]["dest_type"] == "own" then
-			dest_gate=portal_network["players"][player_name]["own_gates"][list_index+i+1]
-		else
-			dest_gate=portal_network["players"][player_name]["public_gates"][list_index+i+1]
-		end
-		gate["destination"]={}
-		gate["destination"].x=dest_gate["pos"].x
-		gate["destination"].y=dest_gate["pos"].y
-		gate["destination"].z=dest_gate["pos"].z
-		gate["destination_description"]=dest_gate["description"]
-		gate["destination_dir"]=dest_gate["dir"]
-		formspec = portal_mgc.get_formspec(player_name,"main")
-		portal_network["players"][player_name]["formspec"] = formspec
-		minetest.show_formspec(player_name, "portal_main", formspec)
-	end
-	end
-end
