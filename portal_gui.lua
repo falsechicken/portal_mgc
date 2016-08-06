@@ -117,19 +117,23 @@ portal_mgc.create_symbols = function()
 	tmp.s3 = math.random(1,4)
 	tmp.s4 = math.random(1,4)
 	
-	local isduplicate = nil
 	
-	-- see if address is already taken
-	-- TODO properly test...
-	for __,gate in pairs(portal_network[K_PORTALS]) do 
-		if gate["address"].s1 == tmp.s1 and gate["address"].s2 == tmp.s2 and gate["address"].s3 == tmp.s3 and gate["address"].s4 == tmp.s4 then
-			-- duplicate, try again
-			tmp = portal_mgc.create_symbols()
+	-- only 256 combinations possible, prevent endless loop
+	if portal_network[K_PORTALS] < 256 then
+	
+		-- see if address is already taken
+		-- TODO properly test...
+		for __,gate in pairs(portal_network[K_PORTALS]) do 
+			if gate["address"].s1 == tmp.s1 and gate["address"].s2 == tmp.s2 and gate["address"].s3 == tmp.s3 and gate["address"].s4 == tmp.s4 then
+				-- duplicate, try again
+				tmp = portal_mgc.create_symbols()
+			end
 		end
+		return tmp
+	else
+		return nil	-- TODO perhaps assign 0 to symbols?
 	end
-	
-	return tmp
-	
+		
 end
 
 -- create portal infotext 
@@ -166,12 +170,12 @@ local function paginize_portals(exclude)
 		
 		if exclude["pos"].x == gate["pos"].x and exclude["pos"].y == gate["pos"].y and exclude["pos"].z == gate["pos"].z then 
 			-- nothing..
-		else		
+		elseif gate["type"] == "public" then		
 			if portal_pages[i] == nil then portal_pages[i] = {} end
 			table.insert(portal_pages[i], gate)	
-		
+
 			c = c + 1
-			
+
 		end
 		
 	end
@@ -273,25 +277,31 @@ portal_mgc.get_formspec = function(player_name, page)
 	formspec = formspec.."image_button[9,0;.6,.6;right_icon.png;page_right;]"
 
 	
-	local portals = portal_network[K_PORTALS]
+	--local portals = portal_network[K_PORTALS]
 	local offset = 0
 	local size = 0.6
 	local y = 1.0
 	
-	for __,portal in pairs(portal_pages[index]) do
-		if portal["pos"] ~= current_portal["pos"] and portal["type"] == "public" then
-			
-			-- public portal index 
-			formspec=formspec.."label[6.45,"..(0.6+offset)..";"..portal["name"].."]"	
-			-- portal symbol address		
-			formspec = formspec.."image[6.45,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s1 ..".png]"
-			formspec = formspec.."image[7.25,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s2 ..".png]"
-			formspec = formspec.."image[8.05,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s3 ..".png]"
-			formspec = formspec.."image[8.85,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s4 ..".png]"
-			
-			offset = offset + 1.2
-			
-		end		
+	--if portal_pages[index] == nil then paginize_portals(current_portal) end
+	
+	-- fix in case remembered index was out of bounds
+	--if index > table.getn(portal_pages) then index = table.getn(portal_pages) end
+	if portal_pages ~= nil then
+		for __,portal in pairs(portal_pages[index]) do
+			if portal["pos"] ~= current_portal["pos"] and portal["type"] == "public" then
+
+				-- public portal index 
+				formspec = formspec.."label[6.45,"..(0.6+offset)..";"..portal["name"].."]"	
+				-- portal symbol address		
+				formspec = formspec.."image[6.45,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s1 ..".png]"
+				formspec = formspec.."image[7.25,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s2 ..".png]"
+				formspec = formspec.."image[8.05,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s3 ..".png]"
+				formspec = formspec.."image[8.85,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s4 ..".png]"
+
+				offset = offset + 1.2
+
+			end		
+		end
 	end
 	
 	return formspec
@@ -335,8 +345,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			portal["type"] = "public"
 		else portal["type"] = "private" end
 
-		minetest.show_formspec(player_name, "portal_main", portal_mgc.get_formspec(player_name, "main"))
+		minetest.show_formspec(player_name, "portal_dhd", portal_mgc.get_formspec(player_name, "main"))
 		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
+		portal_mgc.save_data(K_PORTALS)
 		return
 	end
 	
@@ -353,6 +364,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		formspec= portal_mgc.get_formspec(player_name,"main")
 		minetest.show_formspec(player_name, "portal_dhd", formspec)
 		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
+			
+		portal_mgc.save_data(K_PORTALS)
 		return
 	end
 

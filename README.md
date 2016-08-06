@@ -1,9 +1,9 @@
 #(WIP) Minetest Portals (a la Stargate)
-
+for MineTest 0.4.14
 
 
 By: Harrierjack based on [technic/stargate] (https://github.com/minetest-technic/stargate)
-(I admit the formspec is just a near straight copy but in my defense it looked way better then anything I could come up with :P)
+Formspec was a copy but eventually changed completely. Some formspec textures and gate sounds are still used (at least as placeholder)
 
 
 Same goes for DHD textures: 'borrowed' from [DS-minetest] (https://forum.minetest.net/viewtopic.php?f=9&t=9632)
@@ -17,20 +17,32 @@ The portal itself is a structure you have to build yourself (atm anyway), it sho
 ![alt screenie] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshot.png)
 
 
-Then put down a DialHomeDevice (DHD) near a portal to have it connect to that portal. Right clicking the DHD will open the menu. Note that the DHD needs technic HV power for the portal to function. The DHD and the portal work wireless (let's go with that ;) )
+Then put down a DialHomeDevice (DHD) near a portal to have it connect to that portal. The portal checks where the DHD is to see which side will be used for the teleporting 'dropzone'.
+
+Right clicking the DHD will open the menu. The portal registrator will be the owner and can change name or set private. At this time the only advantage of private is not showing up in the portal list.  
+On the left bottom you can see some information about the current portal and on the right you see public portals with their address. After entering an address press the big red button and the portal activates
+
+![alt screenie dhd] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotdhd.png)
 
 
-Portals can be public or private to grant or deny access and after registering with a DHD that player becomes the owner and is the only one who can remove the portal.
+After activation the portal stays open for 8 seconds, every porting entity adds to more seconds to the time it stays open.
+
+Note that the DHD needs technic HV power for the portal to function, when the power runs out the portal shuts down (keep arms and legs inside at all times :) ). The DHD and the portal work wireless (let's go with that ;) )
+
+
+![alt screenie open] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotportalon.png)
+
 
 All public portals are connected (no discovery necessary)
 
 Requires:  
 [Technic](https://github.com/minetest-technic/technic)
-
+__though not used yet__
 
 ####TODO:
-	- [ ] teleport
-	- [ ] all directions including on its face
+	- [X] teleport
+	- [/] all directions including on its face
+	- [X] complete overhaul of DHD formspec and portal selection system
 	- [ ] add technic power requirement (very high)
 	- [ ] gfx
 	- [ ] debug
