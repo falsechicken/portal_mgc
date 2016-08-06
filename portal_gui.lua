@@ -3,14 +3,13 @@ portal_mgc.default_page = "main"
 
 local K_PORTALS = "registered_portals"
 
-
+-- TODO possibly depcrecated
 local function table_empty(tab)
 	for key in pairs(tab) do return false end
 	return true
 end
 
 portal_mgc.save_data = function(table_pointer)
-	--if table_empty(portal_network[table_pointer]) then return end
 	local data = minetest.serialize( portal_network[table_pointer] )
 	local path = minetest.get_worldpath().."/portal_"..table_pointer..".data"
 	local file = io.open( path, "w" )
@@ -56,6 +55,8 @@ portal_mgc.register_portal = function(player_name, pos, dir, dhd_pos)
 	new_gate["owner"]=player_name
 	new_gate["address"]= address
 	new_gate["destination"] = { s1=0, s2=0, s3=0, s4=0 }
+	new_gate["index"] = 1
+	new_gate["dhd_pos"] = dhd_pos
 	table.insert(portal_network[K_PORTALS],new_gate)
 	if portal_mgc.save_data(K_PORTALS)==nil then
 		minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
@@ -150,10 +151,32 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, dhd_po
 	meta:set_string("owner", owner)
 	meta:set_int("portal_active", 0)
 	
-	if dhd_pos ~= nil then meta:set_string("portal_dhd", minetest.serialize(dhd_pos)) print("portal_dhd set ".. dump(dhd_pos)) end
+	if dhd_pos ~= nil then meta:set_string("portal_dhd", minetest.serialize(dhd_pos)) end
 
 end
 
+
+local function paginize_portals(exclude)
+	local amount = 6	-- amount of portals on page 
+	local c = 6
+	portal_pages = {}
+
+	for __,gate in pairs(portal_network[K_PORTALS]) do
+		local i = math.floor(c / amount)
+		
+		if exclude["pos"].x == gate["pos"].x and exclude["pos"].y == gate["pos"].y and exclude["pos"].z == gate["pos"].z then 
+			-- nothing..
+		else		
+			if portal_pages[i] == nil then portal_pages[i] = {} end
+			table.insert(portal_pages[i], gate)	
+		
+			c = c + 1
+			
+		end
+		
+	end
+	
+end
 
 
 --show formspec to player
@@ -179,8 +202,7 @@ portal_mgc.gateFormspecHandler = function(pos, node, clicker, itemstack)
 		if gate["type"]=="public" then 
 		end
 	end
-	
-	--print(dump(portal_network["players"][player_name]["public_gates"]))
+
 	if current_gate==nil then 
 		minetest.chat_send_player(player_name, "Gate not registered in network! Please remove it and place once again.")
 		return nil
@@ -203,8 +225,6 @@ portal_mgc.get_formspec = function(player_name, page)
 	
 	local formspec = "size[9.6,8]"
 
-	print(dump(portal_network))
-	
 	formspec = formspec .."background[-0.19,-0.3;10,8.8;ui_form_bg.png]"
 	
 	-- pressed symbols / destination
@@ -244,25 +264,32 @@ portal_mgc.get_formspec = function(player_name, page)
 	formspec = formspec.."label[1.1,7.5;"..current_portal["type"].."]"	
 
 	-- public portal index page select
-	formspec = formspec.."image_button[6.3,1;.6,.6;left_icon.png;page_left;]"
-	formspec=formspec.."label[7.5,1;1 of 104]"
-	formspec = formspec.."image_button[9,1;.6,.6;right_icon.png;page_right;]"
+	local index = current_portal["index"] 
+	if index == nil then index = 1 end
+	paginize_portals(current_portal)
+	
+	formspec = formspec.."image_button[6.3,0;.6,.6;left_icon.png;page_left;]"
+	formspec=formspec.."label[7.5,0;".. tostring(index) .. " of " ..tostring(#portal_pages).."]"
+	formspec = formspec.."image_button[9,0;.6,.6;right_icon.png;page_right;]"
 
 	
 	local portals = portal_network[K_PORTALS]
 	local offset = 0
-	for __,portal in pairs(portals) do
+	local size = 0.6
+	local y = 1.0
+	
+	for __,portal in pairs(portal_pages[index]) do
 		if portal["pos"] ~= current_portal["pos"] and portal["type"] == "public" then
 			
 			-- public portal index 
-			formspec=formspec.."label[6.3,"..(1.6+offset)..";"..portal["name"].."]"	
-			-- portal symbol address
-			formspec = formspec.."image[7.8,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s1 ..".png]"
-			formspec = formspec.."image[8.2,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s2 ..".png]"
-			formspec = formspec.."image[8.6,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s3 ..".png]"
-			formspec = formspec.."image[9,"..(1.6+offset)..";.5,.5;symbol"..portal["address"].s4 ..".png]"
+			formspec=formspec.."label[6.45,"..(0.6+offset)..";"..portal["name"].."]"	
+			-- portal symbol address		
+			formspec = formspec.."image[6.45,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s1 ..".png]"
+			formspec = formspec.."image[7.25,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s2 ..".png]"
+			formspec = formspec.."image[8.05,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s3 ..".png]"
+			formspec = formspec.."image[8.85,"..(y+offset)..";"..size..","..size..";symbol"..portal["address"].s4 ..".png]"
 			
-			offset = offset + 0.6
+			offset = offset + 1.2
 			
 		end		
 	end
@@ -292,9 +319,11 @@ end
 
 
 
+
+
 -- redo of formspec
 minetest.register_on_player_receive_fields(function(player, formname, fields)
-	if not formname == "portal_dhd" then return end
+	if formname ~= "portal_dhd" then return false end
 	
 	local portal = portal_network["current_gate"]
 	local player_name = player:get_player_name()
@@ -326,8 +355,30 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
 		return
 	end
+
+	-- index page controls
+	local index = portal["index"]
+	local amount = #portal_pages
 		
-	-- activate TODO fix logic...
+	if fields.page_left then
+		if index > 1 then	
+			portal["index"] = index-1
+		end
+		minetest.show_formspec(player_name, "portal_dhd", portal_mgc.get_formspec(player_name, "main"))	
+		minetest.sound_play("paperflip2", {to_player=player_name, gain = 1.0})
+		return
+	end
+		
+	if fields.page_right then	
+		if index < amount then	
+			portal["index"] = index+1
+		end
+		minetest.show_formspec(player_name, "portal_dhd", portal_mgc.get_formspec(player_name, "main"))	
+		minetest.sound_play("paperflip2", {to_player=player_name, gain = 1.0})
+		return
+	end
+		
+	-- activate TODO fix logic probably...
 	if fields.activate then 
 		local dest = portal_mgc.find_gate_by_symbol(portal["destination"])	
 			
@@ -338,18 +389,16 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			minetest.sound_play("gateSpin", {pos = portal["pos"], gain = 0.5,loop = false, max_hear_distance = 16,})
 			return
 		end
-
 		
-			
 		portal["destination"].x = dest["pos"].x
 		portal["destination"].y = dest["pos"].y
 		portal["destination"].z = dest["pos"].z
 		
 		portal["destination_dir"] = dest["dir"]	
 			
-		-- do activation logic
+		-- activate
 		activate_portal(portal["pos"], portal["dir"])
-			
+		minetest.get_node_timer(portal["dhd_pos"]):start(8)
 			
 		return 
 	end
@@ -367,8 +416,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
 		return
 	end
-		
-		
+			
 		
 end)
 

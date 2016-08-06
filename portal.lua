@@ -1,19 +1,11 @@
--- HarrierJack portal MineGateControl test
+-- HarrierJack portal MineGateControl portal_mgc
 
 -- TODO ideas
 -- create bulb (damaging?deadkly) when turned on, slightly lighter/whiter color (square-2 till 1)
--- fix when sounds are played
--- DONE: make viscous inside blocks (max visc?)
 -- test if ring is still complete before opening portal
 
 -- END TODO
 
-
-
-
--- WHY won't this work??
---local c_air = minetest.get_content_id("air")
---local c_portal_material = minetest.get_content_id(portal_mgc.ring_material)
 
 
 -- helper function to swap coordinates for different portal orientation
@@ -74,7 +66,6 @@ local function check_for_portal_east(pos, data, area)
 	
 	local c_air = minetest.get_content_id("air")
 	local c_portal_material = minetest.get_content_id(portal_mgc.ring_material)
-	--local c_portal_inside = minetest.get_content_id(portal_mgc.modname .. ":portal_block_inside")
 	
 	
 	-- check if already registered as keystone so no other calc is needed
@@ -154,13 +145,11 @@ local function find_gate_pos(pos, radius, player)
 			--local facedir = get_dir_from_diff(pos, v)
 			
 			-- make sure facedir is correct for the portal e.g. dhd close to portal gives wrong facedir
-			--if facedir == 0 or facedir == 2 then
-				if v.x - pos.x <= 0 then 
-					facedir = 1
-				else 
-					facedir = 3
-				end
-			--end			
+			if v.x - pos.x <= 0 then 
+				facedir = 1
+			else 
+				facedir = 3
+			end
 			
 			-- register portal keystone
 			portal_mgc.register_portal(player_name, v, facedir, pos)
@@ -329,7 +318,20 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 	-- enable/disble portal by punching
 	on_punch = function(pos) 
 		local meta = minetest.get_meta(pos)
-		minetest.get_node_timer(pos):start(2)
+		local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
+			
+		if meta:get_int("portal_active") == 0 then	
+			local portal = portal_mgc.find_gate(ppos)
+			local dest_gate = portal_mgc.find_gate_by_symbol(portal["destination"])
+
+			if dest_gate == nil then return end
+				
+				
+				
+			minetest.sound_play("gateSpin", {pos = ppos, gain = 0.5,loop = false, max_hear_distance = 16,})
+			meta:set_int("portal_active", 1)	-- premptive set active
+			minetest.get_node_timer(pos):start(3)
+		end
 			
 		end,
 		
@@ -344,9 +346,11 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 			if is_on == 1 then 
 				deactivate_portal(ppos, dir) 
 				minetest.get_meta(ppos):set_int("portal_active", 0)
+				minetest.get_meta(pos):set_int("portal_active",0)
 			else 
 				activate_portal(ppos, dir) 
 				minetest.get_meta(ppos):set_int("portal_active", 1)
+				minetest.get_meta(pos):set_int("portal_active",1)
 				minetest.get_node_timer(pos):start(portal_mgc.portal_time_open)
 			end
 			
@@ -365,29 +369,22 @@ minetest.register_abm({
 			
 			-- TODO rearrange code so only if objects are near vars are set (now they are uselessly 'reset' for each object..
 		for _,object in ipairs(minetest.get_objects_inside_radius(pos, 1)) do
-			--if object:is_player() or true then 
-				--local player_name = object:get_player_name()
 					
 				local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
 				local owner = minetest.get_meta(ppos):get_string("owner")	
 									
 				local gate=portal_mgc.find_gate (ppos)
-				if gate==nil then print("Gate is not registered!") return end
-					
-					-- TODO check if destination is set
-				if gate["destination"] == "" then return end	
-					
+				if gate==nil then print("Gate is not registered!") return end			
+				
+				local dest_gate = portal_mgc.find_gate_by_symbol(gate["destination"])
+				
+				if dest_gate == nil then return end
+				
 				local pos1={}
-				pos1.x=gate["destination"].x
-				pos1.y=gate["destination"].y
-				pos1.z=gate["destination"].z
-				local dest_gate=portal_mgc.find_gate (pos1)
-				if dest_gate==nil then 
-					gate["destination"]=nil
-					deactivate_portal(ppos, gate["dir"])
-					portal_mgc.save_data(owner)
-					return
-				end
+				pos1.x=dest_gate["pos"].x
+				pos1.y=dest_gate["pos"].y
+				pos1.z=dest_gate["pos"].z
+				
 				--if player_name~=owner and gate["type"]=="private" then return end
 					
 				local dir1=gate["destination_dir"]
@@ -419,9 +416,7 @@ minetest.register_abm({
 				dpos = minetest.deserialize(dpos)					
 				local timer = minetest.get_node_timer(dpos)
 				timer:start(timer:get_timeout() + portal_mgc.portal_time_extra)
-					
-					
-			--end
+
 		end
 	end
 }) 

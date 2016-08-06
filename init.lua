@@ -1,5 +1,6 @@
 -- create some basic global vars
 portal_network = {}
+portal_pages = {}
 portal_mgc = {}
 portal_mgc.modname = minetest.get_current_modname()
 portal_mgc.modpath = minetest.get_modpath(portal_mgc.modname)
