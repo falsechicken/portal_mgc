@@ -119,7 +119,7 @@ portal_mgc.create_symbols = function()
 	
 	
 	-- only 256 combinations possible, prevent endless loop
-	if portal_network[K_PORTALS] < 256 then
+	if table.getn(portal_network[K_PORTALS]) < 256 then
 	
 		-- see if address is already taken
 		-- TODO properly test...
@@ -286,7 +286,7 @@ portal_mgc.get_formspec = function(player_name, page)
 	
 	-- fix in case remembered index was out of bounds
 	--if index > table.getn(portal_pages) then index = table.getn(portal_pages) end
-	if portal_pages ~= nil then
+	if portal_pages[index] ~= nil then
 		for __,portal in pairs(portal_pages[index]) do
 			if portal["pos"] ~= current_portal["pos"] and portal["type"] == "public" then
 

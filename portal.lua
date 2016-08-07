@@ -322,11 +322,10 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 			
 		if meta:get_int("portal_active") == 0 then	
 			local portal = portal_mgc.find_gate(ppos)
+			if portal == nil then return end
+				
 			local dest_gate = portal_mgc.find_gate_by_symbol(portal["destination"])
-
-			if dest_gate == nil then return end
-				
-				
+			if dest_gate == nil then return end			
 				
 			minetest.sound_play("gateSpin", {pos = ppos, gain = 0.5,loop = false, max_hear_distance = 16,})
 			meta:set_int("portal_active", 1)	-- premptive set active
