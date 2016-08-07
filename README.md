@@ -14,7 +14,7 @@ Same goes for DHD textures: 'borrowed' from [DS-minetest] (https://forum.minetes
 
 The portal itself is a structure you have to build yourself (atm anyway), it should look like this and be made from carbon steel blocks
 
-![alt screenie] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshot.png)
+![alt screenie] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshot.jpg)
 
 
 Then put down a DialHomeDevice (DHD) near a portal to have it connect to that portal. The portal checks where the DHD is to see which side will be used for the teleporting 'dropzone'.
@@ -22,7 +22,7 @@ Then put down a DialHomeDevice (DHD) near a portal to have it connect to that po
 Right clicking the DHD will open the menu. The portal registrator will be the owner and can change name or set private. At this time the only advantage of private is not showing up in the portal list.  
 On the left bottom you can see some information about the current portal and on the right you see public portals with their address. After entering an address press the big red button and the portal activates
 
-![alt screenie dhd] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotdhd.png)
+![alt screenie dhd] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotdhd.jpg)
 
 
 After activation the portal stays open for 8 seconds, every porting entity adds to more seconds to the time it stays open.
@@ -30,7 +30,7 @@ After activation the portal stays open for 8 seconds, every porting entity adds 
 Note that the DHD needs technic HV power for the portal to function, when the power runs out the portal shuts down (keep arms and legs inside at all times :) ). The DHD and the portal work wireless (let's go with that ;) )
 
 
-![alt screenie open] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotportalon.png)
+![alt screenie open] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotportalon.jpg)
 
 
 All public portals are connected (no discovery necessary)
