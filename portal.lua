@@ -320,7 +320,7 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 		local meta = minetest.get_meta(pos)
 		local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
 			
-		if meta:get_int("portal_active") == 0 then	
+		if meta:get_int("portal_active") == 0 and ppos ~= nil then	
 			local portal = portal_mgc.find_gate(ppos)
 			if portal == nil then return end
 				
