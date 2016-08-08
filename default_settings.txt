@@ -1,3 +1,7 @@
+-----
+--	SETTINGS CAN BE EDITED
+--  BACKUP THIS FILE AND EDIT CAREFULLY
+--
 
 
 -- radius in which the Dial Home Device checks for portal when it is put down
@@ -9,9 +13,10 @@ portal_mgc.portal_time_extra = 2	-- amount of time (s) the portal stays open lon
 portal_mgc.ring_material = "technic:carbon_steel_block"
 
 
--- HV power requirement per second
+-- power requirement per second
 -- note: deliberately high
-portal_mgc.hv_power_demand = 500000
+portal_mgc.power_type = "HV"		-- LV, MV, HV though fictional realism demands HV :P
+portal_mgc.power_demand = 500000	-- power drain per second
 
 
 

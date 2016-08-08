@@ -153,7 +153,7 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, dhd_po
 	local meta = minetest.get_meta(pos)
 	meta:set_string("infotext", infotext)
 	meta:set_string("owner", owner)
-	meta:set_int("portal_active", 0)
+	meta:set_int("enabled", 0)
 	
 	if dhd_pos ~= nil then meta:set_string("portal_dhd", minetest.serialize(dhd_pos)) end
 
