@@ -10,12 +10,13 @@ portal_mgc.portal_time_open = 8		-- amount of time (s) the portal stays open if 
 portal_mgc.portal_time_extra = 2	-- amount of time (s) the portal stays open longer when someone goes through (stacks)
 
 -- material which the portal ring needs to be made of
+-- if this block can not be found (error, typo, mod disabled) it will always default to default:diamondblock
 portal_mgc.ring_material = "technic:carbon_steel_block"
 
 
 -- power requirement per second
 -- note: deliberately high
-portal_mgc.power_type = "HV"		-- LV, MV, HV though fictional realism demands HV :P
+portal_mgc.power_type = "HV"		-- LV, MV, or HV is allowed, though fictional realism demands HV :P
 portal_mgc.power_demand = 500000	-- power drain per second
 
 

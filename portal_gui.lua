@@ -3,7 +3,7 @@ portal_mgc.default_page = "main"
 
 local K_PORTALS = "registered_portals"
 
--- TODO possibly depcrecated
+-- check if table is empty
 local function table_empty(tab)
 	for key in pairs(tab) do return false end
 	return true
@@ -69,6 +69,7 @@ portal_mgc.register_portal = function(player_name, pos, dir, dhd_pos)
 end
 
 
+-- unregister portal from network file and memory
 portal_mgc.unregister_portal = function(player_name,gate_pos)	
 	local dir
 	for __,gate in ipairs(portal_network[K_PORTALS]) do
@@ -88,7 +89,7 @@ portal_mgc.unregister_portal = function(player_name,gate_pos)
 end
 
 
--- used in gate_defs/portal.lua for teleport
+-- finds and returns gate from position, nil if not existing
 portal_mgc.find_gate = function(pos)
 	for __,gate in ipairs(portal_network[K_PORTALS]) do
 		if gate["pos"].x==pos.x and gate["pos"].y==pos.y and gate["pos"].z==pos.z then
@@ -98,6 +99,7 @@ portal_mgc.find_gate = function(pos)
 	return nil
 end
 
+-- finds and returns gate from symbol, nil if not existing
 portal_mgc.find_gate_by_symbol = function(address)
 	for __,gate in ipairs(portal_network[K_PORTALS]) do
 		if gate["address"].s1 == address.s1 and gate["address"].s2 == address.s2 and gate["address"].s3 == address.s3 and gate["address"].s4 == address.s4 then
@@ -160,6 +162,7 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, dhd_po
 end
 
 
+-- paginize all portals into a table where index = page
 local function paginize_portals(exclude)
 	local amount = 6	-- amount of portals on page 
 	local c = 6
@@ -282,10 +285,10 @@ portal_mgc.get_formspec = function(player_name, page)
 	local size = 0.6
 	local y = 1.0
 	
-	--if portal_pages[index] == nil then paginize_portals(current_portal) end
-	
-	-- fix in case remembered index was out of bounds
+	-- fix in case remembered index was out of bounds? 
+	-- tbh i'm not sure when this could happen unless multi user play and current portal is shared, still testing
 	--if index > table.getn(portal_pages) then index = table.getn(portal_pages) end
+	
 	if portal_pages[index] ~= nil then
 		for __,portal in pairs(portal_pages[index]) do
 			if portal["pos"] ~= current_portal["pos"] and portal["type"] == "public" then
@@ -308,6 +311,7 @@ portal_mgc.get_formspec = function(player_name, page)
 end
 
 
+-- dial symbol in order 1 - 4
 local function portal_dial(symbol)
 	local adr = portal_network["current_gate"]["destination"]
 	
@@ -330,8 +334,7 @@ end
 
 
 
-
--- redo of formspec
+-- receive formspec fields
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	if formname ~= "portal_dhd" then return false end
 	
@@ -410,8 +413,9 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		portal["destination_dir"] = dest["dir"]	
 			
 		-- activate
-		activate_portal(portal["pos"], portal["dir"])
-		minetest.get_node_timer(portal["dhd_pos"]):start(8)
+		portal_mgc.enable_dhd(portal["dhd_pos"], 1)		
+		minetest.get_node_timer(portal["dhd_pos"]):start(8)	
+			
 			
 		return 
 	end
