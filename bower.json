@@ -1,0 +1,19 @@
+{
+    "name": "Stargate like portals",
+    "description": "Adds stargate-like portals",
+    "keywords": [
+		"teleportation",
+        "stargate like portals"
+    ],
+    "project": "https://github.com/harrierjack/portal_mgc",
+    "forum": "https://forum.minetest.net/viewtopic.php?f=9&t=15313",
+    "screenshots": [
+        "https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshot.jpg",
+		"https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotdhd.jpg",
+		"https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshotportalon.jpg",
+		"https://forum.minetest.net/download/file.php?mode=view&id=7227"
+    ],
+    "authors": [
+        "HarrierJack"
+    ]
+}
