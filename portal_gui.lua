@@ -232,7 +232,7 @@ portal_mgc.get_formspec = function(player_name, page)
 	
 	local formspec = "size[9.6,8]"
 
-	formspec = formspec .."background[-0.19,-0.3;10,8.8;ui_form_bg.png]"
+	formspec = formspec .."background[-0.19,-0.3;10,8.8;dhd_form_bg.png]"
 	
 	-- pressed symbols / destination
 	formspec = formspec.."image[.5,0;1,1;symbol"..current_portal["destination"].s1 .. ".png]"
