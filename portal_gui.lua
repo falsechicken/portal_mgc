@@ -157,7 +157,7 @@ portal_mgc.set_portal_meta = function (pos, orientation, infotext, owner, dhd_po
 	meta:set_string("owner", owner)
 	meta:set_int("enabled", 0)
 	
-	if dhd_pos ~= nil then meta:set_string("portal_dhd", minetest.serialize(dhd_pos)) end
+	if dhd_pos ~= nil then meta:set_string("dhd_pos", minetest.serialize(dhd_pos)) end
 
 end
 
@@ -261,13 +261,13 @@ portal_mgc.get_formspec = function(player_name, page)
 		formspec = formspec.."field[1.3,6.9;5,1;name_box;Edit name:;" .. current_portal["name"].."]"
 	else 
 		-- normal page
-		if player_name == owner then formspec = formspec.."image_button[.5,6.9;.6,.6;pencil_icon.png;edit_name;]" end
+		if player_name == owner then formspec = formspec.."image_button[.5,6.9;.6,.6;screwdriver.png;edit_name;]" end
 		formspec = formspec.."label[1.1,6.9;Name: " .. current_portal["name"].."]"
 	end
 			
 		
 	-- edit public/private if owner
-	if player_name == owner then formspec = formspec.."image_button[.5,7.5;.6,.6;toggle_icon.png;toggle_type;]" end
+	if player_name == owner then formspec = formspec.."image_button[.5,7.5;.6,.6;camera_btn.png;toggle_type;]" end
 	formspec = formspec.."label[1.1,7.5;"..current_portal["type"].."]"	
 
 	-- public portal index page select
@@ -408,7 +408,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		portal["destination"].y = dest["pos"].y
 		portal["destination"].z = dest["pos"].z
 		
-		portal["destination_dir"] = dest["dir"]	
+		--portal["destination_dir"] = dest["dir"]	
 			
 		-- activate
 		portal_mgc.enable_dhd(portal["dhd_pos"], 1)		

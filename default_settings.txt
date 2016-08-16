@@ -7,7 +7,7 @@
 -- radius in which the Dial Home Device checks for portal when it is put down
 portal_mgc.dhd_check_radius = 10	
 
-portal_mgc.portal_time_open = 8		-- amount of time (s) the portal stays open if nobody goes through
+portal_mgc.portal_time_open = 8		-- amount of time (s) the portal should stay open if nobody goes through
 portal_mgc.portal_time_extra = 2	-- amount of time (s) the portal stays open longer when someone goes through (stacks)
 
 -- material which the portal ring needs to be made of

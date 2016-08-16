@@ -6,7 +6,7 @@ portal_mgc.modname = minetest.get_current_modname()
 portal_mgc.modpath = minetest.get_modpath(portal_mgc.modname)
 
 -- check technic mod is enabled
-if minetest.get_modpath("technic") ~= nil then portal_mgc.is_technic = true else portal_mgc.is_technic = false end
+if (minetest.get_modpath("technic")) ~= nil then portal_mgc.is_technic = true else portal_mgc.is_technic = false end
 
 
 
@@ -20,4 +20,4 @@ dofile(portal_mgc.modpath .. "/portal.lua")
 -- load craft recipes
 -- dofile(portal_mgc.modpath .. "/crafts.lua")
 
-print("[Portal MGC] loaded")
+print("[Mod] Portal MGC ["..portal_mgc.modname.."] loaded...")

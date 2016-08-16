@@ -5,8 +5,9 @@ for MineTest 0.4.14
 By: Harrierjack based on [technic/stargate] (https://github.com/minetest-technic/stargate)
 Formspec was a copy but eventually changed completely. Some formspec textures and gate sounds are still used (at least as placeholder)
 
-
-Same goes for DHD textures: 'borrowed' from [DS-minetest] (https://forum.minetest.net/viewtopic.php?f=9&t=9632)
+Gladly received help from:
+DHD textures: [DS-minetest] (https://forum.minetest.net/viewtopic.php?f=9&t=9632), [azekill_DIABLO] 
+Formspec Icons: TBD
 
 
 ##Stargate-like portals for Minetest.
@@ -15,7 +16,7 @@ Same goes for DHD textures: 'borrowed' from [DS-minetest] (https://forum.minetes
 
 The portal itself is a structure you have to build yourself (atm anyway), it should look like the example below and be made from carbon steel blocks when Technic mod is enabled. The block type can be changed in default_settings.txt as well as some other values but in case technic isn't available or a custom block can't be found it will always default to default:diamondblock.
 
-Note: _if you switch portal blocks mid game / in existing world all previous portals will still be registered as such, either remove 'portal_registered_portals.data' file and/or remove/replace DHD's, symbols will probably change_
+Note: _if you switch portal blocks mid game / in an existing world all previous portals will still be registered as such, either remove 'portal_registered_portals.data' file and/or remove/replace DHD's, symbols will change_
 
 ![alt screenie] (https://raw.githubusercontent.com/harrierjack/portal_mgc/master/screenshot.jpg)
 

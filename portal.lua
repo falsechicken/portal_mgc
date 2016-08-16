@@ -12,9 +12,9 @@ if not minetest.registered_nodes[portal_mgc.ring_material] then
 end
 
 -- adjust for async between dhd timer and technic power consumption
--- but only with technic mod
+-- but only with technic mod enabled
 if portal_mgc.is_technic then
-	portal_mgc.portal_time_extra = portal_mgc.portal_time_extra + 1
+	portal_mgc.portal_time_open = portal_mgc.portal_time_open + 1
 end
 
 
@@ -147,7 +147,6 @@ local function find_gate_pos(pos, radius, player)
 		
 			-- register portal with DHD
 			meta:set_string("portal_keystone", minetest.serialize(v))		
-			--meta:set_string("portal_dir", "north")
 			meta:set_int("portal_dir", facedir)
 							
 			return true
@@ -176,6 +175,15 @@ local function find_gate_pos(pos, radius, player)
 	
 end
 
+local function forceload_portal(pos)
+	-- force load portal position
+	minetest.forceload_block(pos)
+	
+	-- forceload dhd position since they can be in different blocks
+	local dpos = minetest.deserialize(minetest.get_meta(pos):get_string("dhd_pos"))
+	minetest.forceload_block(dpos)
+	
+end
 
 -- activate portal by swapping the air nodes with portal blocks
 function activate_portal(pos, orientation)
@@ -189,7 +197,7 @@ function activate_portal(pos, orientation)
 		local vpos = vector.add(pos, v )
 		minetest.set_node(vpos, {name=portal_mgc.modname .. ":portal_block_inside"})
 		
-		-- set all inside blocks portal coords (tmp fix?)
+		-- set all inside blocks portal coords (tmp fix?) TODO see if this is still used
 		local meta = minetest.get_meta(vpos)
 		meta:set_string("portal_keystone", minetest.serialize(pos))
 		
@@ -197,14 +205,18 @@ function activate_portal(pos, orientation)
 	
 	-- set dhd and keystone enabled
 	minetest.get_meta(pos):set_int("enabled", 1)
-	--local portal = portal_mgc.find_gate(pos)
 	
 	minetest.sound_play("gateOpen", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
 	
-	-- forceload block attempt
-	if minetest.forceload_block(pos) then
-		minetest.chat_send_all("load true portal x:"..pos.x .." y:"..pos.y .." z:"..pos.z)
-		else minetest.chat_send_all("load false") end
+	-- force load portal position
+	minetest.forceload_block(pos)
+	
+	-- forceload dhd position since they can be in different blocks
+	local dpos = minetest.deserialize(minetest.get_meta(pos):get_string("dhd_pos"))
+	
+	-- TMP fix so not everybodies game starts to bug, remove eventually
+	if dpos == nil then return end
+	minetest.forceload_block(dpos)
 	
 end
 
@@ -227,8 +239,18 @@ function deactivate_portal(pos, orientation)
 	minetest.sound_play("gateClose", {pos = pos, gain = 1.0,loop = false, max_hear_distance = 72,})
 			
 	-- unload block
-	minetest.forceload_free_block(pos)
+	--minetest.forceload_free_block(pos)
 	minetest.chat_send_all("deactivated portal x:"..pos.x .." y:"..pos.y .." z:"..pos.z)
+	
+	-- unload portal position
+	minetest.forceload_free_block(pos)
+	
+	-- unload dhd position since they can be in different blocks
+	local dpos = minetest.deserialize(minetest.get_meta(pos):get_string("dhd_pos"))
+	
+	-- TMP fix so not everybodies game starts to bug, remove eventually
+	if dpos == nil then return end
+	minetest.forceload_free_block(dpos)
 end
 
 
@@ -236,7 +258,7 @@ end
 portal_can_dig = function(pos,player)
 	local player_name = player:get_player_name()
 	local meta = core.get_meta(pos)
-	if meta:get_string("dont_destroy") == "true" then return end	-- TODO remove or use dont_destroy tag
+	if meta:get_string("dont_destroy") == "true" then return end	-- TODO remove or start using "dont_destroy" tag
 	local owner=meta:get_string("owner")
 	if player_name==owner then return true
 	else return false end
@@ -262,7 +284,6 @@ local function dhd_run(pos, node)
 	if portal_on == 1 and input < demand then
 		if ppos ~= nil then
 			deactivate_portal(ppos, meta:get_string("portal_dir"))
-			minetest.chat_send_all("condition 1")
 		end
 	end
 	
@@ -280,12 +301,10 @@ local function dhd_run(pos, node)
 	if dhd_on == 0 and portal_on == 1 then
 		if ppos ~= nil then
 			deactivate_portal(ppos, meta:get_string("portal_dir"))
-			minetest.chat_send_all("condition 2")
 		end
 	end
 	
-	minetest.chat_send_all(tostring(meta:get_int(prefix.."_EU_demand")))
-	
+
 	-- set new demand and make sure dhd infotext isn't stuck on "no network" (set inside technic, no direct access afaik)
 	if meta:get_int("enabled") == 0 then
 		meta:set_int(prefix.."_EU_demand", 0)
@@ -390,14 +409,18 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 				end
 				portal_mgc.unregister_portal(player_name, ppos) 
 			end
-					
+			
+			local timer = minetest.get_node_timer(pos)
+			if timer:is_started() then timer:stop() end
+			
+			portal_mgc.enable_dhd(pos, 0)
 	end,
 
 	-- enable technic hv 
 	technic_run = dhd_run,
 			
 	mesecons = {effector = {
-	action_on = function (pos, node)
+		action_on = function (pos, node)
 			local meta = minetest.get_meta(pos)
 			local ppos = minetest.deserialize(meta:get_string("portal_keystone"))
 
@@ -407,8 +430,7 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 
 				local dest_gate = portal_mgc.find_gate_by_symbol(portal["destination"])
 				if dest_gate == nil then return end				
-					
-					
+									
 				portal_mgc.enable_dhd(pos, 1)
 			end
 		end,
@@ -436,7 +458,7 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 				
 			minetest.sound_play("gateSpin", {pos = ppos, gain = 0.5,loop = false, max_hear_distance = 16,})
 			portal_mgc.enable_dhd(pos, 1)
-			minetest.get_node_timer(pos):start(8)
+			minetest.get_node_timer(pos):start(portal_mgc.portal_time_open)
 		end
 			
 		end,
@@ -452,7 +474,6 @@ minetest.register_node(portal_mgc.modname .. ":dhd", {
 				portal_mgc.enable_dhd(pos, 1)
 				minetest.get_node_timer(pos):start(portal_mgc.portal_time_open)
 			end
-			minetest.chat_send_all("timer ticked is_on= "..tostring(is_on))
 		end,
 		
 		
@@ -485,8 +506,8 @@ minetest.register_abm({
 				pos1.y=dest_gate["pos"].y
 				pos1.z=dest_gate["pos"].z
 					
-				local dir1=gate["destination_dir"]
-				local dest_angle = 0	-- TODO there is a bug where math.rad(dest_angle) expects number but is nil pops up sometimes, havent been able to reproduce
+				local dir1=dest_gate["dir"]
+				local dest_angle = 0	
 				if dir1 == 0 then
 					pos1.z = pos1.z+2
 					dest_angle = 0
@@ -511,28 +532,24 @@ minetest.register_abm({
 					
 				-- increase dhd timer by 2 if there was one
 				local dpos = gate["dhd_pos"]
-				--local dpos = minetest.get_meta(ppos):get_string("portal_dhd")	
-				--dpos = minetest.deserialize(dpos)					
-				
 				local timer = minetest.get_node_timer(dpos)
 				
 				if timer:is_started() then
-					minetest.chat_send_all("adding time, reset: ".. tostring(timer:get_timeout()))
 					timer:start(timer:get_timeout() - timer:get_elapsed() + portal_mgc.portal_time_extra)
 				end
-minetest.chat_send_all("tried object for portal")
+
 			end
-minetest.chat_send_all(dump(object))
-				print(dump(object))
+
 		end
 	end
 }) 
 
 -- register technic machine (or register abm to simulate the same loop)
-if (minetest.get_modpath("technic")) ~= nil then
+if portal_mgc.is_technic then
 	technic.register_machine(portal_mgc.power_type, portal_mgc.modname ..":dhd", technic.receiver)
-	
+	print("registered machine")
 else 
+	print("going ABM?")
 	minetest.register_abm({
 		nodenames = {portal_mgc.modname .. ":dhd"},
 		interval = 1,
