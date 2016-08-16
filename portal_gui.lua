@@ -58,9 +58,9 @@ portal_mgc.register_portal = function(player_name, pos, dir, dhd_pos)
 	new_gate["index"] = 1
 	new_gate["dhd_pos"] = dhd_pos
 	table.insert(portal_network[K_PORTALS],new_gate)
-	if portal_mgc.save_data(K_PORTALS)==nil then
-		minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
-	end
+	--if portal_mgc.save_data(K_PORTALS)==nil then
+	--	minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
+	--end
 	
 	local infotext = "Portal\nOwned by: "..player_name
 	
@@ -79,9 +79,9 @@ portal_mgc.unregister_portal = function(player_name,gate_pos)
 			break
 		end
 	end
-	if portal_mgc.save_data(K_PORTALS)==nil then
-		minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
-	end
+	--if portal_mgc.save_data(K_PORTALS)==nil then
+	--	minetest.chat_send_player(player_name, "[portal] Couldnt update network file!")
+	--end
 		
 	portal_mgc.set_portal_meta(gate_pos, dir, nil, nil, nil)
 	
@@ -350,7 +350,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
 		minetest.show_formspec(player_name, "portal_dhd", portal_mgc.get_formspec(player_name, "main"))
 		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
-		portal_mgc.save_data(K_PORTALS)
 		return
 	end
 	
@@ -368,7 +367,6 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		minetest.show_formspec(player_name, "portal_dhd", formspec)
 		minetest.sound_play("click", {to_player=player_name, gain = 0.5})
 			
-		portal_mgc.save_data(K_PORTALS)
 		return
 	end
 
@@ -416,6 +414,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		portal_mgc.enable_dhd(portal["dhd_pos"], 1)		
 		minetest.get_node_timer(portal["dhd_pos"]):start(8)	
 			
+		-- TODO DELETE perhaps too much strain to save every activation? but testing is easier
+		--portal_mgc.save_data(K_PORTALS)
 			
 		return 
 	end
@@ -435,5 +435,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 			
 		
+end)
+
+-- save portal data on server shutdown rather then everytime somebody clicks or changes anything
+minetest.register_on_shutdown(function()
+	portal_mgc.save_data(K_PORTALS)
 end)
 

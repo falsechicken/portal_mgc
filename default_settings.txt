@@ -5,19 +5,21 @@
 
 
 -- radius in which the Dial Home Device checks for portal when it is put down
-portal_mgc.dhd_check_radius = 10
+portal_mgc.dhd_check_radius = 10	
+
 portal_mgc.portal_time_open = 8		-- amount of time (s) the portal stays open if nobody goes through
 portal_mgc.portal_time_extra = 2	-- amount of time (s) the portal stays open longer when someone goes through (stacks)
 
 -- material which the portal ring needs to be made of
--- if this block can not be found (error, typo, mod disabled) it will always default to default:diamondblock
+-- if this block can not be found (error, typo, mod disabled or technic without moreores) 
+-- it will always default back to default:diamondblock
 portal_mgc.ring_material = "technic:carbon_steel_block"
 
 
 -- power requirement per second
 -- note: deliberately high
 portal_mgc.power_type = "HV"		-- LV, MV, or HV is allowed, though fictional realism demands HV :P
-portal_mgc.power_demand = 500000	-- power drain per second
+portal_mgc.power_demand = 500000	-- power drain per second, don't make negative it'll break things :D
 
 
 
@@ -55,7 +57,7 @@ portal_mgc.ring = {
 } -- end portal ring
 	
 
--- TESTING example rename big ring to something else and remove small_ from 2 names below
+-- OLD TESTING example rename big ring to something else and remove prefix small_ from 2 names below
 -- small inside 5x5 portal for testing
 portal_mgc.small_inside = { {x=0,y=1,z=0}, {x=-1,y=2,z=0}, {x=0,y=2,z=0}, {x=1,y=2,z=0}, {x=0,y=3,z=0} }
 
